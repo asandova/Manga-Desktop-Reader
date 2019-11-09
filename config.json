@@ -1,0 +1,11 @@
+{
+    "Hide Cache Files" : false,
+    "Hide Download Directory" : false,
+    "Cashe Save Location" : ".",
+    "Default Download Location" : "./Manga",
+    "Webdriver Location" : "./WebDrivers",
+    "default WebDriver" : "geckodriver",
+    "Search Location(s)" : [ 
+        "./Manga"
+    ]
+}

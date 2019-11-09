@@ -1,0 +1,7 @@
+*.pyc
+__pycache__/
+*.glade*
+Manga/
+*.log
+*.zip
+*.tar.gz
