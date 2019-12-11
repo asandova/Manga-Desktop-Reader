@@ -4,7 +4,8 @@
     "Cashe Save Location" : ".",
     "Default Download Location" : "./Manga",
     "Webdriver Location" : "./WebDrivers",
-    "default WebDriver" : "geckodriver",
+    "Browser Version" : "2.45",
+    "Browser" : "Chrome",
     "Search Location(s)" : [ 
         "./Manga"
     ]
