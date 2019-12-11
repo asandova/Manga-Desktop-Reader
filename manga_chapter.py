@@ -3,18 +3,27 @@
 from bs4 import BeautifulSoup
 
 import requests,traceback, sys, os, shutil
+from PIL import Image
+from zipfile import ZipFile
 
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-opts = Options()
-opts.set_headless()
-assert opts.headless
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
+chromeopts = ChromeOptions()
+chromeopts.set_headless()
+assert chromeopts.headless
+
+firefoxopts = FirefoxOptions()
+firefoxopts.set_headless()
+assert firefoxopts.headless
 
 class Chapter:
 
+    Driver_path = None
+    Driver_type = None
+
     def __init__(self, name, number):
         self.chapter_name = name
-        self.directory = "Chapter_" + str(number)
         self.number_of_Pages = 0
         self.pages = {}
         if type(number) is float:
@@ -28,6 +37,7 @@ class Chapter:
             self.chapter_number = number
         else:
             raise Exception("Chapter number must be a integer or float")
+        self.directory = "Chapter_" + str(self.chapter_number)
         self.chapter_link = ""
 
     def set_chapter_number(self, num):
@@ -41,6 +51,12 @@ class Chapter:
             self.chapter_link = link
     def get_link(self):
         return self.chapter_link
+
+    def get_full_title(self):
+        full = "Chapter_" + str(self.chapter_number)
+        if self.chapter_number == "":
+            full += ":_"+ self.chapter_name.replace(' ', '_')
+        return full
 
     def set_chapter_name(self, name):
         if type(name) == str:
@@ -56,7 +72,13 @@ class Chapter:
         try:
             #display = Display(visible=0, size=(800,600))
             #display.start()
-            browser = webdriver.Chrome(executable_path="./WebDrivers/Chrome/chromedriver",options=opts)
+            browser = None
+            if Chapter.Driver_path == None or Chapter.Driver_type == None:
+                return -1
+            elif Chapter.Driver_type == "Chrome":
+                browser = webdriver.Chrome(executable_path=Chapter.Driver_path,options=chromeopts)
+            elif Chapter.Driver_type == "Firefox":
+                browser = webdriver.Firefox(executable_path=Chapter.Driver_path,options=firefoxopts)
             browser.get(self.chapter_link)
             #print(browser.page_source)
             site_source = BeautifulSoup(browser.page_source, 'lxml')
@@ -70,12 +92,7 @@ class Chapter:
             else:
                 page_name = 'page_'
                 print("Begining Download of Chapter " + str( self.chapter_number) )
-                save_path = save_location+'/'+self.directory
-                if self.chapter_name != "":
-                    save_path += ":" + self.chapter_name
-                if os.path.exists(save_path) != True:
-                    os.makedirs(save_path)
-                save_path += "/"
+                save_path = save_location+'/'+self.get_full_title() + "/"
                 for p in pages:
                     self.number_of_Pages += 1
                     #print(p.prettify())
@@ -91,12 +108,36 @@ class Chapter:
                     if num == -1:
                         browser.quit()
                         return 3
-                    print(save_path+filename)
+                    #print(save_path+filename)
+                    if os.path.isdir(save_path) == False:
+                        os.makedirs(save_path)
                     with open(save_path+filename, 'wb') as f:
                         f.write(img.content)
                         f.close()
-                    self.pages[int(num)] = filename
-                print("Download of " + self.chapter_name + ": complete")
+                    #print(url_elements)
+                    if url_elements[-1] == "webp":
+                        #print("converting")
+                        jpeg_name = page_name + num +'.jpeg'
+                        Chapter.__convert_webp_to_jpeg( infile=save_path+filename, outfile=save_path+jpeg_name )
+                        os.remove(save_path+filename)
+                        self.pages[int(num)] = jpeg_name
+                    else:
+                        self.pages[int(num)] = filename
+                save_path = save_location+'/'
+                zip_name = self.get_full_title() +".zip"
+                #print(save_path+zip_name)
+                zip_file = ZipFile( save_path+zip_name ,'w')
+                with zip_file:
+                    pages = os.listdir(save_path+self.directory+'/')
+                    #print(pages)
+                    for p in pages:
+                        #print(p)
+                        if p != zip_name:
+                            zip_file.write( save_path+self.directory+'/' + p, p ) 
+                            os.remove(save_path+self.directory+'/' +p)
+                zip_file.close()
+                os.removedirs(save_path+self.directory)
+                print("Download of chapter_"+ str(self.chapter_number)+ ": complete")
                 browser.quit()
                 return 0
             #display.quit()
@@ -104,17 +145,19 @@ class Chapter:
             traceback.print_exc(file=sys.stdout)
             print("Error occured: " + str(e))
             return -1
-            #print(e )
-            #p rint("Failed to download chapter")
+    @staticmethod
+    def __convert_webp_to_jpeg(infile,outfile):
+        #print(f"infile: {infile},\noutfile: {outfile}" )
+        try:
+            Image.open(infile).save(outfile)
+        except IOError:
+            print("cannot convert", infile)
 
     def delete_chapter(self, save_location):
-        chapter_path = save_location+"/Chapter_"+str(self.chapter_number)
-        if self.chapter_name != "":
-            chapter_path += ":" + self.chapter_name 
-
-        if os.path.isdir(chapter_path)== True:
+        chapter_path = save_location+"/"+self.get_full_title() + '.zip'
+        if os.path.isfile(chapter_path) == True:
             try:
-                shutil.rmtree(chapter_path,False)
+                os.remove(chapter_path)
                 self.pages = {}
                 return 0
             except:
@@ -123,30 +166,12 @@ class Chapter:
             return 1
 
     def is_downloaded(self,save_location="."):
-        print(self.pages)
-        if len(self.pages) == 0:
-            print("no chapters downloaded")
-            return False
-        
-        path = save_location+'/'+self.directory
-        print(path)
-        if self.chapter_name != "":
-            path += ":" + self.chapter_name
-        if os.path.isdir(path) == False:
-            print("path is not a directory")
-            return False
+        save_location += "/" + self.get_full_title() + '.zip'
+        #print(save_location)
+        if os.path.isfile(save_location) == True:
+            return True
         else:
-            pages = os.listdir(path)
-            print(pages)
-            num = 0
-            for p in pages:
-                for dp in self.pages.values():
-                    if p == dp:
-                        num += 1
-            if num != len(self.pages):
-                return False
-        return True
-
+            return False
 
     def __lt__(self, chap):
         if isinstance(chap, Chapter):
@@ -187,6 +212,9 @@ class Chapter:
                 return False
         else:
             raise Exception("Cannot compare Chapter object and "  + str(type(chap)))
+
+    def __hash__(self):
+        return hash( ( self.chapter_number, self.chapter_name, self.chapter_link ) )
 
     def __str__(self):
         #print("converting Chapter to string")

@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 from manga_stream import Manga_Stream
 
-import json, platform
+import json, platform, requests
+from bs4 import BeautifulSoup
 
 platform_type = platform.system()
 
@@ -16,15 +17,17 @@ class Manga_Source:
         self.site_url = ""
         self.site_domain = ""
         self.manga_extention = ""
+        self.save_location = Manga_Source.default_save_location
         self.Title = ""
         self.directory = self.Title.replace(' ', '_')
+        if self.directory != "":
+            self.save_location += '/' + self.directory
         self.authors = []
         self.artists = []
         self.genres = []
         self.streams = []
         self.summary = ""
         self.html_source = ""
-        self.save_location = Manga_Source.default_save_location
         self.cover_location = ""
         self.keep = {}
 
@@ -39,8 +42,17 @@ class Manga_Source:
         return domain
 
     def request_manga(self, url):
-        pass
-
+        self.site_url = url
+        r = requests.get(url)
+        if r.ok != True:
+            return r.status_code
+        else:
+            #print("Extracting Manga from " + url)
+            self.site_html = BeautifulSoup( r.text, 'lxml' )
+            self.site_url = url
+            #print("Extraction complete")
+            return 0
+    
     def extract_manga(self):
             self._extract_domain(self.site_url)
             self._extract_title()
@@ -60,8 +72,15 @@ class Manga_Source:
     def update(self):
         pass
 
-    def update_stream(self):
-        pass
+    def update_streams(self):
+        r = requests.get(self.site_url)
+        if r.ok != True:
+            return r.status_code
+        else:
+            self.site_html = BeautifulSoup( r.text, 'lxml' )
+            self.streams = []
+            self._extract_streams()
+            return 0
 
     def _extract_title(self):
         pass
@@ -138,18 +157,23 @@ class Manga_Source:
         for s in self.streams:
             if s.name == name:
                 return s
+        return None
+        
     def get_stream_with_id(self,id):
         for s in self.streams:
             if s.id == id:
                 return s
+        return None
 
     def get_stream_with_id_and_name(self,id,name):
         for s in self.streams:
             if s.id == id and s.name == name:
                 return s
+        return None
 
     def add_stream(self, stream):
         if isinstance(stream, Manga_Stream):
+            print("adding stream " + stream.name)
             self.streams.append(stream)
         else:
             raise Exception("Attemting to add a non Manga_Stream object")
@@ -231,17 +255,19 @@ class Manga_Source:
             self.streams.append( stream )
 
     def to_json_file(self, save_location):
+        print(save_location)
+        print(self.directory)
         manga_dict = self.to_dict()
-        filename = self.Title.replace(' ', '_')
+        filename = self.directory
         if Manga_Source.hide_cache_file == True:
             if platform_type == "Windows":
                 filename = "$"+self.Title
             else:
                 filename = "."+self.Title
-        with open(save_location +"/" + filename +'/' +filename+ ".json", 'w') as f:
+        with open(save_location +"/" + self.directory +'/' +filename+ ".json", 'w') as f:
             f.write(json.dumps( manga_dict, indent=1 ))
             f.close()
-        print(save_location +"/" + filename + ".json : has been written to")
+        print(save_location +"/" + self.directory +'/' +filename + ".json : has been written to")
 
     def from_json(self, json_string):
         manga_dict = json.loads(json_string)

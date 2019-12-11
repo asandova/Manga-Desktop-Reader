@@ -60,18 +60,6 @@ class MangaPark_Source(Manga_Source):
 
         return dic
 
-    def request_manga(self, url):
-        self.site_url = url
-        r = requests.get(url)
-        if r.ok != True:
-            return r.status_code
-        else:
-            #print("Extracting Manga from " + url)
-            self.site_html = BeautifulSoup( r.text, 'lxml' )
-            self.site_url = url
-            #print("Extraction complete")
-            return 0
-
     def Download_Manga(self, location="",keep=False):
         save_location = self.save_location
         if location != "":
@@ -85,9 +73,9 @@ class MangaPark_Source(Manga_Source):
                     else:
                         if self.keep[s.name].count(c.get_chapter_number) == 0:
                             self.keep[s.name].append(c.get_chapter_number)
-                title = self.Title.replace(" ", '_')
+                #title = self.Title.replace(" ", '_')
                 stream_name = s.name.replace(' ', '_')
-                c.download_chapter( save_location +'/'+title+'/'+ stream_name)
+                c.download_chapter( save_location +'/'+self.directory+'/'+ stream_name)
 
     def Download_Manga_stream(self, stream_id, location="",Keep=False):
         save_location = self.save_location
@@ -104,9 +92,9 @@ class MangaPark_Source(Manga_Source):
                             if self.keep[s.name].count(c.get_chapter_number) == 0:
                                 self.keep[s.name].append(c.get_chapter_number)
 
-                    title = self.Title.replace(" ", '_')
+                    #title = self.Title.replace(" ", '_')
                     stream_name = self.streams[stream_id].name.replace(' ', '_')
-                    c.download_chapter( save_location +'/'+title+'/'+ stream_name)
+                    c.download_chapter( save_location +'/'+self.directory+'/'+ stream_name)
                 return
     def Download_Manga_Chapter(self, stream_id, chapter_number, location="",keep=False):
         save_location = self.save_location
@@ -114,8 +102,8 @@ class MangaPark_Source(Manga_Source):
             save_location == location
         for s in self.streams:
             if s.id == stream_id:
-                for c in s.chapters:
-                    if c.get_chapter_number() == chapter_number:
+                for k in s.chapters.keys():
+                    if  s.chapters[k].get_chapter_number() == chapter_number:
                         if keep == True:
                             if self.keep.get(s.name) == False:
                                 self.keep[s.name] = []
@@ -123,10 +111,10 @@ class MangaPark_Source(Manga_Source):
                             else:
                                 if self.keep[s.name].count(chapter_number) == 0:
                                     self.keep[s.name].append(chapter_number)
-                        title = self.Title.replace(" ", '_')
+                        #title = self.Title.replace(" ", '_')
                         stream = self.get_stream_with_id(stream_id)
                         stream_name = stream.name.replace(' ', '_')
-                        code = c.download_chapter(save_location +'/'+title+'/'+ stream_name)
+                        code =  s.chapters[k].download_chapter(save_location +'/'+self.directory+'/'+ stream_name)
                         return code
                 return -1
         return -2
@@ -134,9 +122,9 @@ class MangaPark_Source(Manga_Source):
     def _extract_cover(self):
         cover_data = self.site_html.find('div', class_="w-100 cover")
         
-        title = self.Title.replace(' ','_')
-        if os.path.exists(self.save_location+'/'+title) == False:
-            os.mkdir(self.save_location+'/'+title)
+        #title = self.Title.replace(' ','_')
+        if os.path.exists(self.save_location+'/'+self.directory) == False:
+            os.mkdir(self.save_location+'/'+self.directory)
         cover_image_link = cover_data.img["src"]
         cover = requests.get("https:"+ cover_image_link)
         ext_loc = 0
@@ -147,13 +135,14 @@ class MangaPark_Source(Manga_Source):
         if cover.ok != True:
             print("Failed to download cover")
             return
-        self.cover_location = self.save_location+'/'+title+"/cover"+extention
+        self.cover_location = self.save_location+'/'+self.directory+"/cover"+extention
         with open(self.cover_location, 'wb') as f:
             f.write(cover.content)
             f.close()
 
     def _extract_title(self):
         self.Title = self.site_html.find('div', class_="pb-1 mb-2 line-b-f hd").h2.a.text
+        self.directory = self.Title.replace(' ', '_')
 
     def _extract_summary(self):
         s = self.site_html.find('p', class_='summary').text
@@ -199,22 +188,57 @@ class MangaPark_Source(Manga_Source):
                     if number_start == -1 and number_str_elements[-1][num].isnumeric():
                         number_start = num
                     elif number_start != -1 and number_str_elements[-1][num].isnumeric() == False:
-                        number_end = num
+                        if number_str_elements[-1][num+1].isnumeric() == True:
+                            continue
+                        else:
+                            number_end = num
                         #print(number_end)
                         break
+                #print(number_str_elements)
+                #print(f"start Number: {number_start}\tend Number: {number_end}")
                 if number_end != -1:
                     number = float(number_str_elements[-1][number_start:number_end])
+                elif number_end == -1 and number_start == -1:
+                    print("encountered non-numbered chapter")
+                    continue
                 else:
                     number = float(number_str_elements[-1][number_start:])
                 number_str_elements = number_str_elements[-1].split(': ')
+                name = ""
                 if len( number_str_elements) > 1:
                     name = number_str_elements[-1]
                 else:
-                    name = ""
+                    #if stream_id == 4:
+                        #print(c.parent.parent.prettify())
+                    Title_tag = c.parent.parent.find('div', class_="d-none d-md-flex align-items-center ml-0 ml-md-1 txt")
+                    if Title_tag != None:
+                        #print(Title_tag.text)
+                        name = Title_tag.text
+                        start = 0
+                        for c in name:
+                            if c.isalpha() == True:
+                                break
+                            start += 1
+                        name = name[start:]
+                        print(name)
+                    else:
+                        name = ""
+                    if len(name) > 0:
+                        end = len(name)-1
+                        for i in range( len(name)-1, -1,-1 ):
+                            print(name[i])
+                            if name[i] != ' ':
+                                end = i+1
+                                break
+                        name = name[0:end]
+
                 chap = Chapter(name, number)
                 chap.set_link( self.site_domain + link)
+                #print(f"adding chapter {chap.get_full_title()}")
                 manga_stream.add_chapter(chap)
+            print("adding stream " + manga_stream.name)
             self.add_stream(manga_stream)
+    print("extraction of streams: Complete")
 
     def __str__(self):
         s = "----------Manga Park----------\n"
@@ -232,24 +256,17 @@ class MangaPark_Source(Manga_Source):
         for stream in self.streams:
             s += str(stream) + "\n"
         return s
-        #
 
-#test = MangaPark_Source()
-'''
-test2 = MangaPark_Source()
-test2.set_default_save_location('./Manga')
-#test.request_manga("https://mangapark.net/manga/ryoumin-0-nin-start-no-henkyou-ryoushusama-fuurou")
-test2.request_manga("https://mangapark.net/manga/tensei-shitara-ken-deshita")
-with open('test.json', 'w') as f:
-    f.write( json.dumps( test2.to_dict(),indent=1 ) ) 
-'''
-#test3 = MangaPark_Source()
+if __name__ == "__main__":
+    
+    #test = MangaPark_Source()
+    
+    test2 = MangaPark_Source()
+    test2.set_default_save_location('./Manga')
+    #test.request_manga("https://mangapark.net/manga/ryoumin-0-nin-start-no-henkyou-ryoushusama-fuurou")
+    test2.request_manga("https://mangapark.net/manga/tensei-shitara-ken-deshita")
+    test2.extract_manga()
+    with open('test.json', 'w') as f:
+        f.write( json.dumps( test2.to_dict(),indent=1 ) ) 
 
-#with open("test.json", 'r') as f:
-#    test3.from_json(  f.read() )
-
-#print(test3)
-#test2.Download_Manga_stream( stream_id=MangaPark_Source.Versions["Fox"], location="./Manga" )
-
-#test_json = json.dumps( test.to_dict(), indent=2)
-#print( test_json )
+    test2.Download_Manga_Chapter(stream_id=MangaPark_Source.Versions["Fox"],chapter_number=1 , location="./Manga")
