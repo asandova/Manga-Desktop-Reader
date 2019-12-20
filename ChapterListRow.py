@@ -6,7 +6,7 @@ from gi.repository import Gtk as gtk, GObject
 from gi.repository import GdkPixbuf
 from GUI_Popups import Error_Popup, Warning_Popup, Info_Popup
 from zipfile import ZipFile
-import re, os, shutil, threading
+import re, os, shutil, threading, sys
 
 class ChapterListBoxRow(gtk.ListBoxRow):
     """A GTK ListboxRow child
@@ -92,7 +92,7 @@ class ChapterListBoxRow(gtk.ListBoxRow):
 
         self.id = hash(self)
 
-        #if self.add_to_active() == 1:
+        self.add_to_active()
         #    ChapterListBoxRow.active[ self.id ]["Displayed"] = self
         self.RowWidgets["Row Box"].show()
         self.RowWidgets["Button Box"].show()
@@ -210,7 +210,7 @@ class ChapterListBoxRow(gtk.ListBoxRow):
             if( ChapterListBoxRow.active[ id ]["Instance"] != None ):
                 GObject.idle_add( ChapterListBoxRow._update_spinner,manga, stream_id, chapter, False )
                 GObject.idle_add( ChapterListBoxRow._update_download_button,manga,stream_id,chapter, "Downloaded", "Chapter is Downloaded",False)
-                GObject.idle_add( ChapterListBoxRow._update_remove_button,manga,stream_id,chapter, "Remove chapter ", str(chapter) + " is not downloaded",True)
+                GObject.idle_add( ChapterListBoxRow._update_remove_button,manga,stream_id,chapter, "Remove", str(chapter) + " is not downloaded",True)
                 GObject.idle_add( ChapterListBoxRow._update_view_button,manga,stream_id,chapter, "View", "View " + str(chapter),True)
         
         ChapterListBoxRow.active[id]["Thread"] = None
@@ -269,7 +269,7 @@ class ChapterListBoxRow(gtk.ListBoxRow):
     def _on_Delete_Button(self, widget):
         """ Callback function for delete button """
         if self.downloaded == True:
-            print(self.chapters_path+'/'+self.chapter.directory+ '.zip')
+            #print(self.chapters_path+'/'+self.chapter.directory+ '.zip')
             if os.path.isfile(self.chapters_path+'/'+self.chapter.directory+ '.zip') == True:
                 os.remove(self.chapters_path+'/'+self.chapter.directory+ '.zip')
                 self.RowWidgets["Download Button"].set_tooltip_text("Download " + str(self.chapter))
@@ -301,7 +301,7 @@ class ChapterListBoxRow(gtk.ListBoxRow):
     def delete_viewer( manga_key,stream_id,chapter_key ):
         #print("in delete viewer")
         instance = ChapterListBoxRow.get_instance( manga_key, stream_id, chapter_key )
-        print(instance.id)
+        #print(instance.id)
         if instance != None:
             ChapterListBoxRow.active[instance.id]["Viewer"] = None
             if ChapterListBoxRow.active[instance.id]["Instance"] != None:
@@ -443,9 +443,22 @@ class ViewerWindow(gtk.Window):
             if os.path.isfile(path) == False or page_number == -1: 
                 self.Widgets["Page Image"].set_from_icon_name("gtk-missing-image", 30)
             else:
-                #pb = GdkPixbuf.Pixbuf.new_from_file_at_size(path,width=self.width, height=self.height)
-                pb = GdkPixbuf.Pixbuf.new_from_file_at_scale(path, width=self.width,height=self.height, preserve_aspect_ratio=True)
-                #pb = pb.scale_simple(100,300,2)
+                pb = None
+                if sys.version_info.major == 3:
+                    pb = GdkPixbuf.Pixbuf.new_from_file_at_scale(path, width=self.width,height=self.height, preserve_aspect_ratio=True)
+                elif sys.version_info.major == 2:
+                    pb = GdkPixbuf.Pixbuf.new_from_file(path)
+                    self.base_width = pb.get_width()
+                    self.base_height = pb.get_height()
+                    #print("Base_Width: " + str(self.base_width))
+                    #print("Base_Height: " + str(self.base_height))
+                    #print("Zoom %: " + str( self.zoom_percentage * 10 ))
+                    #print(  self.zoom_percentage / 10.0 )
+                    self.width = self.base_width * ( self.zoom_percentage / 10.0)
+                    self.height = self.base_height * ( self.zoom_percentage / 10.0)
+                    #print(self.width)
+                    #print(self.height)
+                    pb = pb.scale_simple(dest_width=self.width,dest_height=self.height,interp_type = 2)
                 self.Widgets["Page Image"].set_from_pixbuf( pb )
                 self.Widgets["Page Number Label"].set_label( "Page: " + str(page_number) + "/"+ str(self.number_of_pages) )
         else:
@@ -462,7 +475,7 @@ class ViewerWindow(gtk.Window):
         elif self.zoom_percentage > 1:
             self.zoom_percentage -= self.zoom_step
             #print("\t"+str(self.zoom_percentage))
-            percentage_value = self.zoom_percentage/10
+            percentage_value = self.zoom_percentage/10.0
             precentage_text = str( int ( percentage_value * 100))
             self.Widgets["Zoom Label"].set_label( "Zoom: " + precentage_text + "%")
             self.width = self.base_width * percentage_value
@@ -473,7 +486,7 @@ class ViewerWindow(gtk.Window):
         if self.zoom_percentage < 10:
             self.zoom_percentage += self.zoom_step
             #print("\t"+str( self.zoom_percentage))
-            percentage_value = self.zoom_percentage/10
+            percentage_value = self.zoom_percentage/10.0
             precentage_text = str( int ( percentage_value * 100)) 
             self.Widgets["Zoom Label"].set_label( "Zoom: " + precentage_text + "%" )
             self.width = self.base_width * percentage_value

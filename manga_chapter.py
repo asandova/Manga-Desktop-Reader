@@ -29,7 +29,7 @@ class Chapter:
         if type(number) is float:
             num_str = str(number)
             #print(num_str)
-            if num_str[-1] is '0':
+            if num_str[-1] == '0':
                 self.chapter_number = int(number)
             else:
                 self.chapter_number = number
@@ -80,6 +80,7 @@ class Chapter:
             elif Chapter.Driver_type == "Firefox":
                 browser = webdriver.Firefox(executable_path=Chapter.Driver_path,options=firefoxopts)
             browser.get(self.chapter_link)
+            print(self.chapter_link)
             #print(browser.page_source)
             site_source = BeautifulSoup(browser.page_source, 'lxml')
             #print(self.chapter_link)

@@ -220,13 +220,13 @@ class MangaPark_Source(Manga_Source):
                                 break
                             start += 1
                         name = name[start:]
-                        print(name)
+                        #print(name)
                     else:
                         name = ""
                     if len(name) > 0:
                         end = len(name)-1
                         for i in range( len(name)-1, -1,-1 ):
-                            print(name[i])
+                            #print(name[i])
                             if name[i] != ' ':
                                 end = i+1
                                 break
@@ -236,7 +236,7 @@ class MangaPark_Source(Manga_Source):
                 chap.set_link( self.site_domain + link)
                 #print(f"adding chapter {chap.get_full_title()}")
                 manga_stream.add_chapter(chap)
-            print("adding stream " + manga_stream.name)
+            #print("adding stream " + manga_stream.name)
             self.add_stream(manga_stream)
     print("extraction of streams: Complete")
 
