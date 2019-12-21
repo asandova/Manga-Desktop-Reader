@@ -2,7 +2,7 @@
 
 A simple manga reader for the desktop. Keeps track of all your favorite manga from your favorite manga sites all in place.
 
-This is written in Python 3, and uses GTK3 for its GUI
+This is written in Python 3, but is python2.7 compatable(for windows users), and uses GTK3 for its GUI
 
 ## Getting Started
 
@@ -23,10 +23,14 @@ If you wish run from source, please make sure the following python 3 packages ar
 * **beautifulsoup4** - HTML extractor
 * **PyObject** - GTK python/C++ binding library
 
-* Linux
+### Linux
 ```
 pip3 install selenium, lxml, requests, beautifulsoup4, PyObject
 ```
+### Windows
+
+At the moment there is not windows executable so running from source is the only option. To run from source download the latest version of [Python 2.7](https://www.python.org/downloads/) and download [PyGObject](https://sourceforge.net/projects/pygobjectwin32/).
+Once installed then install the same python packages as above (excluding PyObject as you already installed it). Then run the python script named "Main.py"
 
 ### Configure
 This application uses a json configurtion file called config.json
