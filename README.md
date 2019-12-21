@@ -29,7 +29,7 @@ pip3 install selenium, lxml, requests, beautifulsoup4, PyObject
 ```
 ### Windows
 
-At the moment there is not windows executable so running from source is the only option. To run from source download the latest version of [Python 2.7](https://www.python.org/downloads/) and download [PyGObject](https://sourceforge.net/projects/pygobjectwin32/).
+At the moment there is not a windows executable so running from source is the only option. To run from source download the latest version of [Python 2.7](https://www.python.org/downloads/) and download [PyGObject](https://sourceforge.net/projects/pygobjectwin32/).
 Once installed then install the same python packages as above (excluding PyObject as you already installed it). Then run the python script named "Main.py"
 
 ### Configure
