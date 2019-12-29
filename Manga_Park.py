@@ -238,7 +238,7 @@ class MangaPark_Source(Manga_Source):
                 manga_stream.add_chapter(chap)
             #print("adding stream " + manga_stream.name)
             self.add_stream(manga_stream)
-    print("extraction of streams: Complete")
+        print("extraction of streams: Complete")
 
     def __str__(self):
         s = "----------Manga Park----------\n"

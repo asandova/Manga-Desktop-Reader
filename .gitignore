@@ -1,8 +1,11 @@
 *.pyc
 __pycache__/
 *.glade~
+*.glade#
 test/
 Manga/
 *.log
 *.zip
 *.tar.gz
+tracking_list.json
+Main.spec

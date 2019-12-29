@@ -585,6 +585,7 @@ class Main():
 
 
 if __name__ == '__main__':
+    config = {}
     if os.path.exists("config.json") == True:
         with open("config.json",'r') as f:
             config_string = f.read()
@@ -598,7 +599,6 @@ if __name__ == '__main__':
         config["Browser Version"] = "2.45"
         config["Browser"] = "Chrome"
         config["Search Location(s)"] = []
-
 
     if os.path.isdir(config["Default Download Location"]) == False:
         os.makedirs( config["Default Download Location"] )
