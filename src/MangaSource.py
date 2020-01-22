@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-from manga_stream import Manga_Stream
+from .MangaStream import Manga_Stream
 
 import json, platform, requests
 from bs4 import BeautifulSoup

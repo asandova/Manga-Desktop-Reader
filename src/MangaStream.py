@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-from manga_chapter import Chapter
+from .MangaChapter import Chapter
 
 class Manga_Stream:
     def __init__(self, name="", id=-1):

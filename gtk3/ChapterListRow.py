@@ -4,7 +4,7 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk as gtk, GObject
 from gi.repository import GdkPixbuf
-from GUI_Popups import Error_Popup, Warning_Popup, Info_Popup
+from .GUI_Popups import Error_Popup, Warning_Popup, Info_Popup
 from zipfile import ZipFile
 import re, os, shutil, threading, sys
 
