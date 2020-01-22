@@ -4,7 +4,7 @@
 from tkinter import Frame, Canvas, Scrollbar, LEFT, RIGHT, TOP, BOTTOM, X, Y, BOTH
 #from tkinter.ttk import *
 
-class ScrollableFrame_grid(Frame):
+class ScrollableFrameGrid(Frame):
     def __init__(self, master ,*args, **kwargs):
         Frame.__init__(self, master, *args, **kwargs)
         self.grid()
