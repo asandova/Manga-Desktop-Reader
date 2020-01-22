@@ -6,11 +6,11 @@ from gi.repository import Gtk as gtk,GLib as glib, GObject
 GObject.threads_init()
 glib.threads_init()
 #from gi.repository.GdkPixbuf import Pixbuf
-from Manga_Park import MangaPark_Source
-from Manga_Source import Manga_Source
-from ChapterListRow import ChapterListBoxRow
-from manga_chapter import Chapter
-from GUI_Popups import Error_Popup, Warning_Popup, Info_Popup, add_Popup, About_Popup
+from src.MangaPark import MangaPark_Source
+from src.MangaSource import Manga_Source
+from gtk3.ChapterListRow import ChapterListBoxRow
+from src.MangaChapter import Chapter
+from gtk3.GUI_Popups import Error_Popup, Warning_Popup, Info_Popup, add_Popup, About_Popup
 
 import threading
 import json, os, platform, re, shutil,traceback, sys

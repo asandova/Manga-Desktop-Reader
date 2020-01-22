@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-from manga_chapter import Chapter
-from Manga_Source import Manga_Source
-from manga_stream import Manga_Stream
+from .MangaChapter import Chapter
+from .MangaSource import Manga_Source
+from .MangaStream import Manga_Stream
 
 from bs4 import BeautifulSoup
 import requests, re, json, os
