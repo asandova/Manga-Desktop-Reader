@@ -7,7 +7,15 @@ except ImportError:
     from tkinter.ttk import Style
 
 
-class ScrollableListbox(Frame):
+class ScrollableListboxPack(Frame):
+    pass
+    #def add_entry(self):
+    #    pass
+    #def remove_entry(self):
+    #    pass
+
+
+class ScrollableListboxGrid(Frame):
     def __init__(self, master, vscrollside="right", hscrollside="bottom",*args, **kwargs):
         Frame.__init__(self, master=master, *args, **kwargs)
         self.grid()
@@ -50,13 +58,14 @@ class ScrollableListbox(Frame):
         self.__HScroll.grid(row=self.__HScrollPos[0],column=self.__HScrollPos[1],sticky=E+W)
         self.__ListBox.grid(row=self.__listpos[0],column=self.__listpos[1],sticky=E+W+S+N)
 
-    def add_entry(self):
-        pass
+    def insert(self, position, text):
+        self.__ListBox.insert(position, text)
     def remove_entry(self):
         pass
 
+
 if __name__ == "__main__":
     main = Tk()
-    test = ScrollableListbox(master=main,hscrollside="top")
-    test.pack(side=LEFT, expand=1,fill=BOTH)
+    test = ScrollableListboxGrid(master=main,hscrollside="top")
+    #test.pack(side=LEFT, expand=1,fill=BOTH)
     main.mainloop()
