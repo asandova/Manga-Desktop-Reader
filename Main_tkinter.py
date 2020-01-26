@@ -62,7 +62,7 @@ class Main_Window(Tk):
         self.__StatusBar.grid(row=1,column=0,sticky=E+W)
         #self.Widgets["Menu"] = Menu_Bar(master=self)
         #self.Widgets["Main Frame"] = Frame(master=self)
-        #self.Widgets["Panel Frames"] = PanedWindow(master=self.Widgets["Main Frame"],orient="horizontal")
+        #self.Widgets["Panel Frames"] = PanedWindow(master=self.__MainFrame,orient="horizontal")
         #self.Widgets["Panel Frames"].pack(side = TOP,fill="both",expand=1)
         #self.Widgets["Panel Frames"]["showhandle"] = True
         #self.Widgets["Status Bar"] = StatusBar(master=self)
@@ -179,10 +179,13 @@ class TitleFrame(Frame):
 class InfoFrame(LabelFrame):
     def __init__(self,master,font = None, *args, **kwargs):
         LabelFrame.__init__(self, master, *args, **kwargs)
+        self.chapterList=[]
         self.FONT = font
         #self.grid()
         self.__ScrollArea = ScrollableFramePack(master=self)
         self.__ScrollArea["bg"] = "gray"
+        self.__ScrollArea["relief"] = "sunken"
+        self.__ScrollArea["bd"] = 4
         self.Info = {}
         self["text"] = "Source Name"
         self["relief"] = "groove"
@@ -203,12 +206,11 @@ class InfoFrame(LabelFrame):
 
         self.__create_Info_frame()
         self.__create_Control_frame()
+
+        self.__ScrollArea.pack(fill=BOTH,expand=1)
         """
-        self.__create_Info_frame()
-        self.__create_Control_frame()
         self.__create_chapter_frame()
         """
-
 
     def update_frame_label(self, label):
         self["text"] = label
@@ -258,9 +260,6 @@ class InfoFrame(LabelFrame):
         self.__SummaryFrame.grid(   row=5, column=1, columnspan=4, rowspan=1, sticky=N+E+W+S)
 
         self.__Summarylabel.pack( fill=BOTH, expand=1 )
-        self.grid_columnconfigure(0,weight=2)
-        self.grid_rowconfigure(0,weight=2)
-        self.__ScrollArea.grid(row=0,column=0, sticky=N+W+S+E)
 
         self.update_title_details(cover="cover.jpg",title="Title",authors=["Authors"],artists=["Artist"],genres=["Genre"], summary="Test asdassdfaaasd\n\n\n\nsdasdagsfsdfsdfafasdfsfsaff\nasdasdadsa")
 
@@ -298,7 +297,6 @@ class InfoFrame(LabelFrame):
         self.__Summarylabel.insert(END,summary)
         self.__Summarylabel["state"] = DISABLED
 
-
     def __create_Control_frame(self):
         self.__StreamButton = Menubutton(master=self.__ScrollArea.get_attach_point(),text="Select Stream")
         self.__SortButton = Button(master=self.__ScrollArea.get_attach_point(), text="Sort")
@@ -315,25 +313,6 @@ class InfoFrame(LabelFrame):
         self.__UntrackButton.grid(  row=6, column=3)
         self.__SortButton.grid(     row=6, column=4)
 
-        #self.Widgets["Control Container"] = Frame(master=self)
-        #self.Widgets["Control Container"].pack(side=TOP,fill=X)
-        #self.Widgets["Control Container"]["bg"] = "red"
-        #self.Widgets["Control Container"]["bd"] = "5"
-        #self.Widgets["Control Container"]["height"] = 50
-        #self.Widgets["Control Container"]["relief"] = "raised"
-        #self.Widgets["Sort Button"] = Button(master=self.Widgets["Control Container"],text="Sort")
-        #self.Widgets["Sort Button"].pack(side=RIGHT)
-        #self.Widgets["Update Button"] = Button(master=self.Widgets["Control Container"],text="Update Streams")
-        #self.Widgets["Update Button"].pack(side=RIGHT)
-        #self.Widgets["Untrack Button"] = Button(master=self.Widgets["Control Container"], text="Remove Title")
-        #self.Widgets["Untrack Button"].pack(side=LEFT)
-        #self.Widgets["Stream Button"] = Menubutton(master=self.Widgets["Control Container"],text="Select Stream")
-        #self.Widgets["Stream Button"].pack(side=LEFT,fill=Y)
-        #self.Widgets["Selection Label"] = Label(master=self.Widgets["Control Container"], text="No Stream Selected")
-        #self.Widgets["Selection Label"]["relief"] = SUNKEN
-        #self.Widgets["Selection Label"]["bd"] = 4
-        #self.Widgets["Selection Label"].pack(side=LEFT, fill=BOTH,expand=1)
-
     def update_control(self):
         pass
 
@@ -343,6 +322,11 @@ class InfoFrame(LabelFrame):
         #self.Widgets["Chapters Container"]["bg"] = "green"
 
     def update_chapters(self):
+        pass
+
+    def add_chapter(self, index, name):
+        pass
+    def remove_chapter(self, index, name):
         pass
 
     def __create_empty(self):
@@ -362,9 +346,9 @@ if __name__ == "__main__":
     main = Main_Window()
     #main.mainloop()
     #main = Tk()
-    #main.style = Style()
+    main.style = Style()
     #print(main.style.theme_names())
-    #main.style.theme_use("clam")
+    main.style.theme_use("clam")
     #test = ScrollableFrame_pack(master=main)
     #test.pack(expand=1, fill="both")
     #for i in range(50):
