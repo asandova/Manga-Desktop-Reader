@@ -86,6 +86,7 @@ class Chapter:
             #print(self.chapter_link)
             viewer = site_source.find('section', {"class" : "viewer",'id': 'viewer'})
             pages = viewer.find_all('a',class_='img-link')
+                
             if len(pages) == 0:
                 print("Failed to find chapter pages")
                 browser.quit()

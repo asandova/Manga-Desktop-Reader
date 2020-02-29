@@ -1,14 +1,25 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-#from tkinter import *
+#===============================================================================#
+#title           :Main_tkinter.py                                               #
+#description     :The Main driver script for tkinter interface for this project.#
+#author          :August B. Sandoval (asandova)                                 #
+#date            :2020-2-1                                                      #
+#version         :0.1                                                           #
+#usage           :Main python script for Manga Desktop Reader using TKinter     #
+#notes           :                                                              #
+#python_version  :3.6.9                                                         #
+#===============================================================================#
+
 try:
-    from tkinter import Tk, Button, Frame,Entry,Label, Listbox, Menubutton, Menu, Message,Scrollbar,PanedWindow,LabelFrame,StringVar,Canvas, Text
+    from tkinter import Tk, Button, Frame,Entry,Label, Listbox, Menubutton, Menu, Message,Scrollbar,PanedWindow,LabelFrame,StringVar,Canvas, Text, messagebox
     from tkinter import LEFT, RIGHT, CENTER, TOP, BOTTOM, BOTH, X, Y, N, NE, E, SE, S, SW, W, NW, WORD, DISABLED, INSERT, END, NORMAL,SINGLE,VERTICAL,HORIZONTAL
     from tkinter import FLAT, RAISED, SUNKEN, GROOVE, RIDGE
     from tkinter import font
     from tkinter.ttk import *
+
 except:
-    from Tkinter import Tk, Button, Frame,Entry,Label, Listbox, Menubutton, Menu, Message,Scrollbar,PanedWindow,LabelFrame,StringVar,Canvas, Text
+    from Tkinter import Tk, Button, Frame,Entry,Label, Listbox, Menubutton, Menu, Message,Scrollbar,PanedWindow,LabelFrame,StringVar,Canvas, Text, messagebox
     from Tkinter import LEFT, RIGHT, CENTER, TOP, BOTTOM, BOTH, X, Y, N, NE, E, SE, S, SW, W, NW, WORD, DISABLED, INSERT, END, NORMAL,SINGLE,VERTICAL,HORIZONTAL
     from Tkinter import FLAT, RAISED, SUNKEN, GROOVE, RIDGE
     from Tkinter import font
@@ -16,342 +27,678 @@ except:
 
 from tk.ScrollableFrame import *
 from tk.ScrollableListBox import *
+
+import pygubu, json, os, platform, traceback, sys, shutil
+from src.MangaPark import MangaPark_Source
+from src.MangaSource import Manga_Source
+from src.MangaChapter import Chapter
+from tk.popups import add_Window, Viewer, about_dialog
 from PIL import Image, ImageTk
+from queue import Queue
+import threading
 
 class Main_Window(Tk):
     
-    Verdana_Normal_15 = None
-    Verdana_Normal_12 = None
-    Verdana_Normal_10 = None
-    Verdana_Bold_20 = None
+    Verdana_Normal_15 = ("verdana", 15, "normal")
+    Verdana_Normal_13 = ("verdana", 13, "normal")
+    Verdana_Normal_12 = ("verdana", 12, "normal")
+    Verdana_Normal_11 = ("verdana", 11, "normal")
+    Verdana_Normal_10 = ("verdana", 10, "normal")
+    Verdana_Normal_8 = ("verdana", 8, "normal")
+    Verdana_Bold_20 = ("verdana", 20, "bold")
+    Verdana_Bold_15 = ("verdana", 15, "bold")
+    Verdana_Bold_13 = ("verdana", 13, "bold")
+    Verdana_Bold_11 = ("verdana", 11, "bold")
+    Verdana_Bold_12 = ("verdana", 12, "bold")
+    Verdana_Bold_10 = ("verdana", 10, "bold")
+    Verdana_Bold_8 = ("verdana", 8, "bold")
 
     def __init__(self, *args, **kwargs):
         Tk.__init__(self,*args, **kwargs)
-        self.__MainFrame = Frame(master=self)
-        self.__MainFrame.pack(side=TOP,expand=1,fill=BOTH)
-        Main_Window.Verdana_Normal_15 = font.Font(family="Verdana",size=15,weight="normal")
-        Main_Window.Verdana_Normal_12 = font.Font(family="Verdana",size=12,weight="normal")
-        Main_Window.Verdana_Normal_8 = font.Font(family="Verdana",size=10,weight="normal")
-        Main_Window.Verdana_Bold_20 = font.Font(family="Verdana",size=20,weight="bold")
-        self.Widgets = {}
+
+        self.style = Style()
+        try:
+            self.style.theme_use("winnative")
+        except:
+            self.style.theme_use("clam")
+        self.selection = {
+            "Title"     : None,
+            "Stream"    : None,
+            "Chapter"   : None
+        }
+        self.Manga_Dict = {}
+        self.Streams = []
+        self.Chapter_List = []
+        self.search_locations = []
+        self.__KillThreads = False
+        self.threads = {
+            "Title" : None,
+            "Stream" : None,
+            "Chapter" : None
+        }
+        self.ChapterQueue = Queue()
+        self.TitleQueue = Queue()
         self.title("Mange Reader")
         self.minsize(900,500)
         self["height"] = 500
         self["width"] = 1200
-        #self.grid()
-        #self["bd"] = 5
-        #self["bg"] = "#5c5c5c"
-        self.__Menu = Menu_Bar(master=self)
 
-        self.__MainFrame.rowconfigure(0, weight=1)
-        self.__MainFrame.columnconfigure(0,weight=1)
+        self.builder = pygubu.Builder()
+        self.builder.add_from_file("Tk_GUI_Template.ui")
+        self.Info = {
+            "Title"     : StringVar(),
+            "Authors"   : StringVar(),
+            "Artists"   : StringVar(),
+            "Genres"    : StringVar(),
+            "Summary"   : StringVar(),
+            "Status"    : StringVar(),
+            "Source Name" : StringVar()
+        }
+        self.__sort = False #False mean sort in descending and True for ascending order
+        self.Info["Source Name"].set("Manga Park")
 
-        self.__ContentPanels = PanedWindow(master=self.__MainFrame,orient="horizontal")
-        self.__ContentPanels.grid(row=0, column=0,columnspan=1, sticky=N+E+W+S)
-        #self.__ContentPanels["showhandle"] = True
-        self.__TitlePanel = TitleFrame(master=self.__ContentPanels,font=Main_Window.Verdana_Normal_10)
-        self.__TitlePanel.pack(side=LEFT,fill=BOTH,expand=1)
+        self.Widgets = {
+            "Main Window"       :   self.builder.get_object("MainWindow", master=self),
+            "Menu"              :   self.builder.get_object("Menu",master=self),
+            "Add Command"       :   self.builder.get_object("AddMangaCommand"),
+            "Quit Command"      :   self.builder.get_object("QuitCommand"),    
+            "Title Frame"       :   self.builder.get_object("Titleframe"),
+            "Title List"        :   None,
+            "Add Popup"         :   None,
+            "InfoLabelFrame"    :   self.builder.get_object("InfoFrameLabel"),
+            "InfoFrame"         :   self.builder.get_object("InfoFrame"),
+            "Cover"             :   self.builder.get_object("Cover"),
+            "Title Label"       :   self.builder.get_object("TitleLabel"),
+            "Author Label"      :   self.builder.get_object("AuthorLabel"),
+            "Artist Label"      :   self.builder.get_object("ArtistLabel"),
+            "Genre Label"       :   self.builder.get_object("GenreLabel"),
+            "Summary Text"      :   self.builder.get_object("SummaryText"),
+            "Summary Frame"     :   self.builder.get_object("SummaryFrame"),
+            "Stream Select"     :   self.builder.get_object("StreamSelect"),
+            "Remove Button"     :   self.builder.get_object("RemoveButton"),
+            "Update Button"     :   self.builder.get_object("UpdateButton"),
+            "SortButton"        :   self.builder.get_object("SortButton"),
+            "Status Label"      :   self.builder.get_object("StatusLabel"),
+            "Search Entry"      :   self.builder.get_object("SearchEntry")
+        }
+        self.Widgets["InfoFrame"].grid_forget()
+        self.Widgets["InfoLabelFrame"]["labelwidget"] = Label(textvariable=self.Info["Source Name"], font=self.Verdana_Bold_15)
+        
+        self.Widgets["Title Label"]["textvariable"] = self.Info["Title"]
+        self.Widgets["Title Label"]["font"] = self.Verdana_Bold_13
+        self.Widgets["Title Label"]["relief"]= "raised"
 
-        self.__InfoPanel = InfoFrame(master=self.__ContentPanels)
-        self.__InfoPanel.pack(side=RIGHT, fill=BOTH, expand=1)
+        self.Widgets["Author Label"]["textvariable"] = self.Info["Authors"]
+        self.Widgets["Author Label"]["font"] = self.Verdana_Normal_12
+        self.Widgets["Author Label"]["relief"]= "ridge"
+        
+        self.Widgets["Artist Label"]["textvariable"] = self.Info["Artists"]
+        self.Widgets["Artist Label"]["font"] = self.Verdana_Normal_12
+        self.Widgets["Artist Label"]["relief"]= "ridge"
 
-        self.__ContentPanels.add(self.__TitlePanel)
-        self.__ContentPanels.add(self.__InfoPanel)
+        self.Widgets["Genre Label"]["textvariable"] = self.Info["Genres"]
+        self.Widgets["Genre Label"]["font"] = self.Verdana_Normal_12
+        self.Widgets["Genre Label"]["relief"]= "ridge"
 
-        self.__StatusBar = StatusBar(master=self.__MainFrame)
-        self.__StatusBar.grid(row=1,column=0,sticky=E+W)
-        #self.Widgets["Menu"] = Menu_Bar(master=self)
-        #self.Widgets["Main Frame"] = Frame(master=self)
-        #self.Widgets["Panel Frames"] = PanedWindow(master=self.__MainFrame,orient="horizontal")
-        #self.Widgets["Panel Frames"].pack(side = TOP,fill="both",expand=1)
-        #self.Widgets["Panel Frames"]["showhandle"] = True
-        #self.Widgets["Status Bar"] = StatusBar(master=self)
-        #self.Widgets["Status Bar"]["height"] = 25
-        #self.Widgets["Main Frame"].pack(side = TOP,fill="both", expand=1)
-        #self.Widgets["Status Bar"].pack(side = "bottom", fill=X,expand=0)
-        #self.Widgets["Status Bar"]["bg"] = "gray"
+        self.Widgets["Summary Frame"]["labelwidget"] = Label(text="Summary", font=self.Verdana_Bold_11)
+        self.Widgets["Summary Text"]["font"] = self.Verdana_Normal_11
 
-        #self.Widgets["Title Panel"] = TitleFrame(master=self.Widgets["Panel Frames"],font=Main_Window.Verdana_Normal_10)
-        #self.Widgets["Title Panel"]["width"] = 200
-        #self.Widgets["Title Panel"]["height"] = 500
-        #self.Widgets["Title Panel"]["bg"] = "gray"
-        #self.Widgets["Panel Frames"].add(self.Widgets["Title Panel"])
+        self.Widgets["Stream Select"].bind("<<ComboboxSelected>>",self._on_stream_change)
+        self.Widgets["Stream Select"].insert(0, "Select Stream")
+        self.Widgets["Stream Select"]["state"] = "readonly"
+        self.Widgets["Stream Select"]["font"] = self.Verdana_Normal_12
 
-        #self.Widgets["Info Panel"] = InfoFrame(master=self.Widgets["Panel Frames"])
-        #self.Widgets["Info Panel"]["width"] = 1000
-        #self.Widgets["Info Panel"]["height"] = 500
-        #self.Widgets["Info Panel"].pack(side=RIGHT,expand=1, fill=BOTH)
-        #self.Widgets["Info Panel"]["bg"] = "#949494"
+        self.Widgets["Status Label"]["textvariable"] = self.Info["Status"]
+        self.Widgets["Update Button"].config(command=self._on_Update)
+        
+        self.Widgets["Main Window"].pack(fill=BOTH,expand=1)
+        self.Widgets["Title List"] = ScrollableListbox(master=self.Widgets["Title Frame"], command=self._on_list_select)
+        Grid.grid_rowconfigure(self.Widgets["Title Frame"], 0, weight=0)
+        Grid.grid_rowconfigure(self.Widgets["Title Frame"], 1, weight=1)
+        
+        self.Widgets["Title List"].grid(row=1,column=0,sticky=N+E+S+W)
+        self.config(menu=self.Widgets["Menu"])
+        self.Widgets["InfoLabelFrame"]
+        self.builder.connect_callbacks(self)        
 
-        #self.Widgets["Panel Frames"].add(self.Widgets["Info Panel"])
-        self.config(menu=self.__Menu)
-        #self.config(menu = self.Widgets["Menu"])
+        self.protocol("WM_DELETE_WINDOW",self.on_quit)
 
-class Menu_Bar(Menu):
-    def __init__(self, master,*args, **kwargs):
-        Menu.__init__(self, master,*args, **kwargs)
-        self["activeborderwidth"] = 2
-        self.Widgets = {}
-        #self["bg"] = "#949494"
-        self.Widgets["File"] = Menu(self,tearoff=0)
-        self.Widgets["File"]["activeborderwidth"] = 3
-        self.Widgets["File"].add_command(label="Add Manga (url)",command=Menu_Bar.place_holder)
-        self.Widgets["File"].add_separator()
-        self.Widgets["File"].add_command(label="quit",command=master.quit)
-        self.add_cascade(label="File",menu=self.Widgets["File"])
-        self.Widgets["Help"] = Menu(self, tearoff=0)
-        self.Widgets["Help"]["activeborderwidth"] = 3
-        self.Widgets["Help"].add_command(label="About", command=self.show_about)
-        self.add_cascade(label="Help",menu=self.Widgets["Help"])
+        self._get_manga_list_from_file()
+        self._load_manga_entry()
 
-    @staticmethod
-    def place_holder(self):
-        pass
-    def show_about(self):
-        pass
+    def _on_list_select(self, val):
+        print(val)
+        self.selection["Title"] = self.Manga_Dict[val[1]]
+        self.selection["Stream"] = None
+        if self.Widgets["InfoFrame"].winfo_ismapped() == False:
+            self.Widgets["InfoFrame"].grid(row=0,column=0, sticky=N+E+S+W, pady=2, padx=2)
+        
+        self.update_title_details()
+        self._update_stream_dropdown()
+        self._update_Chapter_list()
+        print("list item selected")
 
-class StatusBar(Frame):
-    def __init__(self, master,*args, **kwargs):
-        Frame.__init__(self, master,*args, **kwargs)
-        self["relief"] = RIDGE
-        #self["bd"] = 2
-        self.Widgets = {}
-        self.Widgets["View Button"] = Button(master=self, text="View Chapter")
-        self.Widgets["Download Button"] = Button(master=self, text="Download Chapter")
-        self.Widgets["Remove Button"] = Button(master=self,text="Remove Chapter")
-        self.Widgets["Remove Button"].pack(side=RIGHT)
-        self.Widgets["Download Button"].pack(side=RIGHT)
-        self.Widgets["View Button"].pack(side=RIGHT)
-        self.Widgets["Status Label"] = Label(master=self)
-        self.Widgets["Status Label"].pack(side=LEFT,fill=BOTH,expand=1)
-
-class ChapterListBox(Frame):
-    def __init__(self,master,*args, **kwargs):
-        Frame.__init__(self,master,*args, **kwargs)
-        self.Widgets = {}
-        self.Widgets["Scroll"] = Scrollbar(master=self)
-        self.Widgets["Scroll"].pack(side=LEFT,fill=Y)
-        self.Widgets["Chapter List"] = Listbox(master=self, yscrollcommand=self.Widgets["Scroll"].set )
-        self.Widgets["Chapter List"]["selectmode"]=SINGLE
-        self.Widgets["Chapter List"].pack(side=LEFT,fill=BOTH,expand=1)
-        self.Widgets["Scroll"].config(command = self.Widgets["Chapter List"].yview)
-
-    def add_chapter(self):
-        pass
-
-    def update_chapter_entry(self):
-        pass
-
-    def remove_chapter(self):
-        pass
-
-    def clear(self):
-        pass
+    def on_menu_add(self):
+        print("on menu add")
+        self.Widgets["Add Popup"] = add_Window(master=self,OKCommand=self.__on_add_responce)
     
-class TitleFrame(Frame):
-    def __init__(self,master,font=None,*args, **kwargs):
-        Frame.__init__(self,master,*args, **kwargs)
-        self["relief"] = "groove"
-        self.Widgets = {}
-        self.rowconfigure(0,weight=0)
-        self.rowconfigure(1,weight=1)
-        self.columnconfigure(0,weight=0)
-        self.columnconfigure(1,weight=1)
+    def _add_manga_from_url_runner( self ):
+        while self.TitleQueue.empty() == False :
+            if self.__KillThreads == True:
+                return
+            task = self.TitleQueue.get()
+            manga_object = task[0]
+            self.Info["Status"].set( task[1] +"\n\tDownloading...")
+            code = manga_object.request_manga(task[1])
 
-        self.__SearchLabel = Label( master=self, text="Search" )
-        self.__SearchEntry = Entry(master=self)
-        self.__TitleList = ScrollableListboxGrid(master=self)
+            if code != 0:
+                messagebox.showerror( "Failed to Connect", "HTML Error " + str(code))
+                
+            else:
+                if self.Manga_Dict.get(manga_object.get_title()) == None:
+                    self.Info["Status"].set( manga_object.get_title() + "\n\tExtracting...")
+                    manga_object.extract_manga()
 
-        if font != None:
-            self.__SearchEntry["font"] = font
-            self.__SearchLabel["font"] = font
+                    self.Info["Status"].set( manga_object.get_title() + "\n\tExtraction Complete")
+                    self._add_manga_entry(manga_object.get_title())
+                    self.Manga_Dict[manga_object.get_title()] = manga_object
+                    manga_object.to_json_file(manga_object.save_location)
+                    self.Info["Status"].set( "Sucsessfully added: " + manga_object.get_title())   
+                else:
+                    messagebox.showerror("Manga Already Exists",manga_object.get_title())
 
-        self.__SearchLabel.grid(row=0, column=0,sticky=W)
-        self.__SearchEntry.grid(row=0, column=1, sticky=E+W+N)
-        self.__TitleList.grid(row=1, column=0, columnspan=2, sticky=N+S+E+W)
+            self.TitleQueue.task_done()
+        self.threads["Title"] = None
 
-    def add_title(self,position, name):
-        self.__TitleList.insert(position, name)
+    def __on_add_responce(self , data):
+        domain = Manga_Source.find_site_domain(data)
+        if domain == 'mangapark.net' or domain == 'www.mangapark.net':
+            print("valid responce")
+            manga = MangaPark_Source()
+            print(manga.save_location)
+            self.TitleQueue.put( (manga, data) )
+            if self.threads["Title"] == None:
+                print("Starting Download Thread")
+                self.threads["Title"] = threading.Thread(target=self._add_manga_from_url_runner)
+                self.threads["Title"].start()        
+            
+        elif domain == None:
+            print("invalid reponce")
+            messagebox.showerror("Invalid","Invalid site domain")
+        else:
+            print("Invalid responce")
+            messagebox.showerror("Unsupported Manga Site",domain + " is currently not supported")
 
-    def remove_title(self):
+    def on_quit(self):
+        print("exporting manga list")
+        self.export_manga_list_to_file()
+        if self.threads["Title"] != None:
+            result = messagebox.askyesno("Active Download", "Do you want to wait title to download?")
+            if result == False:
+                return
+            else:
+                self.__KillThreads = True
+
+        if self.threads["Stream"] != None:
+            self.Info["Status"].set("Waiting for Stream Update to finish")
+            self.threads["Stream"].join()
+
+        if self.threads["Chapter"] != None:
+            result = messagebox.askyesno("Active Downloads", "Do you want to wait for chapter(s) to download?")
+            if result == False:
+                return
+            else:
+                self.__KillThreads = True
+            self.Info["Status"].set("Waiting for Chapter downloads to finish")
+            self.threads["Stream"].join()
+           
+        self.destroy()
+
+    def _on_sort(self):
+        self.__sort = not self.__sort
+        self._update_Chapter_list()
+
+    def _on_Update(self):
+        #status = self.Main_Window._check_all_selections()
+        print("Update Stream button pressed")
+        print("Updating: " + self.selection["Title"].get_title())
+
+        if self.selection["Title"] != None:
+            if self.threads["Stream"] == None:
+                #print("Starting Update")
+                self.update_status(self.selection["Title"].get_title() + "\tUpdating Streams...")
+                self.threads["Stream"] = threading.Thread( target=self._update_stream_runner, args=(self.selection["Title"],) )
+                self.threads["Stream"].start()
+
+            elif self.threads["Stream"].is_alive() == False:
+                #print("Starting Update")
+                self.update_status(self.selection["Title"].get_title() + "\tUpdating Streams...")
+                self.threads["Stream"] = threading.Thread( target=self._update_stream_runner, args=(self.selection["Title"],) )
+                self.threads["Stream"].start()
+            else:
+                messagebox.showwarning("Title Update", "An update is in progress. Wait for update to complete before requesting another.")
+        else:
+            #should never get here
+            messagebox.showwarning("Warning","No Manga Stream Selected")
+
+    def _on_Remove(self):
+        self.Widgets["InfoFrame"].grid_forget()
+        manga_to_delete = self.Manga_Dict[self.selection["Title"].get_title()]
+
+        location = manga_to_delete.save_location +'/' + manga_to_delete.directory
+        
+        if os.path.isdir(location) == True:
+            shutil.rmtree(location)
+            del self.Manga_Dict[self.selection["Title"].get_title()]
+            self.Widgets["Title List"].delete( self.selection["Title"].get_title() )
+        print("Remove button pressed")
+
+    def __on_view(self, number):
+        print("view chapter " + str(number))
+        self.selection["Chapter"] = self.selection["Stream"].get_chapter(number)
+        v = Viewer.get_instance( self.selection["Title"], self.selection["Stream"], self.selection["Chapter"] )
+        if v != None:
+            messagebox.showinfo("Viewer open", "A viewer for this chapter is already open")
+        else:
+            Viewer(self.selection["Title"], self.selection["Stream"], self.selection["Chapter"])
+
+    def __on_remove_chapter(self, number):
         pass
 
-class InfoFrame(LabelFrame):
-    def __init__(self,master,font = None, *args, **kwargs):
-        LabelFrame.__init__(self, master, *args, **kwargs)
-        self.chapterList=[]
-        self.FONT = font
-        #self.grid()
-        self.__ScrollArea = ScrollableFramePack(master=self)
-        self.__ScrollArea["bg"] = "gray"
-        self.__ScrollArea["relief"] = "sunken"
-        self.__ScrollArea["bd"] = 4
-        self.Info = {}
-        self["text"] = "Source Name"
-        self["relief"] = "groove"
-        self["labelanchor"] = "n"
-        self.Info["Title"] = StringVar()
-        self.Info["Authors"] = StringVar()
-        self.Info["Artists"] = StringVar()
-        self.Info["Genres"] = StringVar()
-        self.Info["Summary"] = StringVar()
+    def _on_stream_change(self, event):
+        print("Stream change")
+        self.selection["Stream"] = self.selection["Title"].get_stream_with_name(
+            self.Widgets["Stream Select"].get()
+        )
+        print(self.Widgets["Stream Select"].get())
+        self._update_Chapter_list()
 
-        self.__CoverImage = None
-        self.__TitleLabel = None
-        self.__AuthorLabel = None
-        self.__ArtistLabel = None
-        self.__GenreLabel = None
-        self.__SummaryFrame = None
-        self.__Summarylabel = None
+    def _update_stream_dropdown(self):
+        if self.selection["Stream"] != None:
+            self.Widgets["Stream Select"].delete(0, END)
+            self.Widgets["Stream Select"].insert(0,"Select Stream")
+        streamlist = self.selection["Title"].get_streams()
+        streamlist_names = []
+        for i in range(0,len(streamlist)):
+            #print(streamlist[i].get_name())
+            streamlist_names.append(streamlist[i].get_name())
+        self.Widgets["Stream Select"]["values"] = streamlist_names
 
-        self.__create_Info_frame()
-        self.__create_Control_frame()
 
-        self.__ScrollArea.pack(fill=BOTH,expand=1)
-        """
-        self.__create_chapter_frame()
-        """
+    def _update_Chapter_list(self):
+        #print("in _update_chapter_list")
 
-    def update_frame_label(self, label):
-        self["text"] = label
+        if self.selection["Stream"] != None:
+            if len(self.Chapter_List) > 0:
+                #print("removing chapters")
+                for r in self.Chapter_List:
+                    r[0].destroy()
+                self.Chapter_List = []
 
-    def __create_Info_frame(self):
+            chapters = self.selection["Stream"].get_chapters()
+            if self.__sort == True :
+                chapters.sort(reverse=True)
+            else: 
+                chapters.sort(reverse=False)
 
-        self.__CoverImage = Canvas(master=self.__ScrollArea.get_attach_point())
+            for i in range(0, len(chapters)):
+                row = ChapterRow(   master=self.Widgets["InfoFrame"],
+                                    title=self.selection["Title"],     
+                                    stream=self.selection["Stream"],
+                                    chapter=chapters[i],
+                                    viewcommand=self.__on_view,
+                                    downloadcommand=self.__download_chapter
+                )
+                row.grid(row=8+i, column=0, columnspan=5, sticky=E+W)
+                row["relief"] = "groove"
 
-        self.__TitleLabel = Label(master=self.__ScrollArea.get_attach_point(),
-            textvariable=self.Info["Title"])
-        self.__TitleLabel["anchor"] = W
-        self.__TitleLabel["relief"] = RAISED
-        self.__TitleLabel["justify"] = LEFT
+                self.Chapter_List.append( (row , hash(row) )  )
+        else:
+            if len(self.Chapter_List) > 0:
+            #5print("removing chapters")
+                for r in self.Chapter_List:
+                    print(r[0])
+                    r[0].destroy()
+                    self.Chapter_List = []
 
-        self.__AuthorLabel = Label(master=self.__ScrollArea.get_attach_point(),
-            textvariable=self.Info["Authors"])
-        self.__AuthorLabel["relief"]= RIDGE
-        self.__AuthorLabel["anchor"] = W
+    def __download_chapter(self, title, stream, chapter, location):
+        print("Chapter download buttom pressed")
+        self.ChapterQueue.put( (title, stream, chapter, location) )
+        if self.threads["Chapter"] == None:
+            self.threads["Chapter"] = threading.Thread( target=self.__download_chapter_runner )
+            self.threads["Chapter"].start()
+            
 
-        self.__ArtistLabel = Label(master=self.__ScrollArea.get_attach_point(),
-            textvariable=self.Info["Artists"])
-        self.__ArtistLabel["relief"] = RIDGE
-        self.__ArtistLabel["anchor"] = W
+    def  __download_chapter_runner(self):
+        while self.ChapterQueue.empty() == False:
+            if self.__KillThreads == True:
+                return
+            task = self.ChapterQueue.get()
+            manga = task[0]
+            row = self.__is_chapter_visable( task[0], task[1],task[2] )
+            if row != None:
+                    row.Info["Download"].set( "Downloading.." )
 
-        self.__GenreLabel = Label(master=self.__ScrollArea.get_attach_point(),
-            textvariable=self.Info["Genres"])
-        self.__GenreLabel["relief"] = RIDGE
-        self.__GenreLabel["anchor"] = W
+            self.Info["Status"].set("Downloading....\n" +  manga.get_title() + " Chapter  " + str(task[2].get_chapter_number()) )
+            #print( f"Title: {manga.get_title()}\nStream: {task[1].get_name()}\nChapter: {task[2].get_chapter_number()}\nSave Location: {task[3]}" )
+            code = manga.Download_Manga_Chapter( task[1].get_id(),task[2].get_chapter_number(), task[3] )
+            row = self.__is_chapter_visable( task[0], task[1],task[2] )
+            if code != 0:
+                self.Info["Status"].set("Failed to download:\n" + str(task[2]))
+                if row != None:
+                    row.Info["Download"].set( "Download" )
+                    row.update_state("download", True)
+                self.ChapterQueue.task_done()
+                continue
+            else:
+                self.Info["Status"].set("Download of " + manga.get_title() + "\n" + str(task[2]) + " --- Completed")
+                if row != None:
+                    row.Info["Download"].set( "Downloaded" )
+                    row.update_state("download")
+                    row.update_state("view", True)
+                    row.update_state("remove", True)
+                self.ChapterQueue.task_done()
 
-        self.__SummaryFrame = LabelFrame(master=self.__ScrollArea.get_attach_point(), text="Summary" )
-        self.__SummaryFrame["labelanchor"] = N
+        self.threads["Chapter"]= None
 
-        self.__Summarylabel = Text(master=self.__SummaryFrame)
-        self.__Summarylabel["wrap"] = WORD
-        self.__Summarylabel["width"] = 10
-        self.__Summarylabel["height"] = 5
+    def __is_chapter_visable( self, title, stream, chapter ):
+        chapter_hash = hash( ( title, stream, chapter ) )
+        for i in range( 0, len(self.Chapter_List) ):
+            if chapter_hash == self.Chapter_List[i][1]:
+                return self.Chapter_List[i][0]
+        return None
 
-        self.__ScrollArea.grid_columnconfigure(0, weight=0)
-        self.__ScrollArea.grid_columnconfigure(1, weight=1)
-        self.__ScrollArea.grid_rowconfigure(5,weight=0)
-
-        self.__CoverImage.grid(     row=0, column=0, columnspan=1, rowspan=6, sticky=N+E+S+W)
-        self.__TitleLabel.grid(     row=0, column=1, columnspan=4, rowspan=1, sticky=E+W+S+N)
-        self.__AuthorLabel.grid(    row=2, column=1, columnspan=4, rowspan=1, sticky=E+W+S+N)
-        self.__ArtistLabel.grid(    row=3, column=1, columnspan=4, rowspan=1, sticky=E+W+S+N)
-        self.__GenreLabel.grid(     row=4, column=1, columnspan=4, rowspan=1, sticky=E+W+S+N)
-        self.__SummaryFrame.grid(   row=5, column=1, columnspan=4, rowspan=1, sticky=N+E+W+S)
-
-        self.__Summarylabel.pack( fill=BOTH, expand=1 )
-
-        self.update_title_details(cover="cover.jpg",title="Title",authors=["Authors"],artists=["Artist"],genres=["Genre"], summary="Test asdassdfaaasd\n\n\n\nsdasdagsfsdfsdfafasdfsfsaff\nasdasdadsa")
-
-    def update_title_details(self, cover, title="",authors=[],artists=[],genres=[],summary=""):
-        load = Image.open(cover)
+    def update_title_details(self):
+        load = Image.open(self.selection["Title"].get_cover_location())
         render = ImageTk.PhotoImage(load)
-        self.__CoverImage["width"] = render.width()
-        self.__CoverImage["height"] = render.height()
-        self.__CoverImage.create_image(render.width()/2,render.height()/2,anchor="c", image=render)
-        self.__CoverImage.image = render
-        self.Info["Title"].set(title)
-        authors_string = "Author(s): "
-        artists_string = "Artist(s): "
-        genres_string = "Genre(s): "
-        for i in range(0, len(authors) ):
-            authors_string += authors[i]
-            if i != len(authors) - 1:
-                authors_string += ","
-
-        for i in range(0, len(artists) ):
-            artists_string += artists[i]
-            if i != len(artists) - 1:
-                artists_string += ","
-
-        for i in range(0, len(genres) ):
-            genres_string += genres[i]
-            if i != len(genres) - 1:
-                genres_string += ","
+        self.Widgets["Cover"]["width"] = render.width()
+        self.Widgets["Cover"]["height"] = render.height()
+        self.Widgets["Cover"].create_image(render.width()/2,render.height()/2,anchor="c", image=render)
+        self.Widgets["Cover"].image = render
+        self.Info["Title"].set(self.selection["Title"].get_title(group=6))
+        authors_string = " Author(s): " + self.selection["Title"].get_Authors_str(group=4)
+        artists_string = " Artist(s)  : " + self.selection["Title"].get_Artists_str(group=4)
+        genres_string =  " Genre(s) : " + self.selection["Title"].get_Genres_str(group=4)
         self.Info["Authors"].set(authors_string)
         self.Info["Artists"].set(artists_string)
         self.Info["Genres"].set(genres_string)
-        self.__Summarylabel["state"] = NORMAL
-        if self.__Summarylabel.see(END) == True:
-            self.__Summarylabel.delete(INSERT,END)
-        self.__Summarylabel.insert(END,summary)
-        self.__Summarylabel["state"] = DISABLED
 
-    def __create_Control_frame(self):
-        self.__StreamButton = Menubutton(master=self.__ScrollArea.get_attach_point(),text="Select Stream")
-        self.__SortButton = Button(master=self.__ScrollArea.get_attach_point(), text="Sort")
-        self.__SortButton["width"] = 5
-        self.__SelectionLabel = Label(master=self.__ScrollArea.get_attach_point(), text="No Stream Selected")
-        self.__UntrackButton = Button(master=self.__ScrollArea.get_attach_point(), text="Remove Title")
-        self.__UpdateButton = Button(master=self.__ScrollArea.get_attach_point(), text="Update Streams" )
+        self.Widgets["Summary Text"]["state"] = NORMAL
+        self.Widgets["Summary Text"].delete(1.0,END)
+        self.Widgets["Summary Text"].insert(END, self.selection["Title"].get_summary())
+        self.Widgets["Summary Text"]["state"] = DISABLED
+            #print(self.Selected_Manga.site_url)
+        if self.selection["Stream"] != None:
+            self._update_Chapter_list()
 
-        self.__ScrollArea.grid_rowconfigure(6,weight=0)
+    def _get_manga_list_from_file(self):
+        filename = 'tracking_list.json'
+        if config['Hide Cache Files']== True:
+            if platform.system() == "Windows":
+                filename = "$" + filename
+            else:
+                filename = "." + filename
 
-        self.__StreamButton.grid(   row=6, column=0, sticky=W)
-        self.__SelectionLabel.grid( row=6, column=1)
-        self.__UpdateButton.grid(   row=6, column=2)
-        self.__UntrackButton.grid(  row=6, column=3)
-        self.__SortButton.grid(     row=6, column=4)
+        if os.path.exists(config["Cashe Save Location"] +'/'+filename) != True:
+            print("Cache file not found")
+            self.Manga_Dict = {}
+            self.search_locations = ["."]
+        else:
+            cache_string = ""
+            with open(config["Cashe Save Location"] +'/'+ filename, 'r') as f:
+                cache_string = f.read()
+                f.close()
+            if cache_string == "":
+                self.Manga_Dict = {}
+                self.search_locations = ["."]
+                return
 
-    def update_control(self):
-        pass
+            dic = json.loads(cache_string)
+            if(len(dic) == 0):
+                self.Manga_Dict = {}
+                self.search_locations = ["."]
+                return
+            #get manga from tracking file
+            #print("Loading manga from tracking list")
+            for m in dic["Manga List"].keys():
+                path = dic["Manga List"][m]
+                _m = m.replace(' ', '_')
+                cache_path = _m +'/'+ _m+'.json'
+                if self._check_manga_cache_exists( path ,cache_path ) == True:
+                    manga_object = self._read_manga_cache( path +'/'+ cache_path )
+                    if manga_object != None:
+                        self.Manga_Dict[ m ] = manga_object
 
-    def __create_chapter_frame(self):
-        self.Widgets["Chapters Container"] = ChapterListBox(master=self)
-        self.Widgets["Chapters Container"].pack(side=TOP, fill="both",expand=1)
-        #self.Widgets["Chapters Container"]["bg"] = "green"
+            #search for manga not in tracking file
+            #print("Searching for untracked Manga")
+            for search in config["Search Location(s)"]:
+                dirs = os.listdir(search)
+                print(dirs)
+                for d in dirs:
+                    print("Checking " + str(d))
+                    path = search + '/'+ d + "/" + d + '.json'
+                    if os.path.isfile(path) == True:
+                        manga_object = self._read_manga_cache( path)
+                        self.search_locations.append(search)
+                        if manga_object != None:
+                            if self.Manga_Dict.get(manga_object.get_title()) == None:
+                                #print(manga_object)
+                                self.Manga_Dict[manga_object.get_title()] = manga_object
 
-    def update_chapters(self):
-        pass
+    def export_manga_list_to_file(self):
+        filename = 'tracking_list.json'
+        if config['Hide Cache Files']== True:
+            if platform.system()  == "Windows":
+                filename = "$" + filename
+            else:
+                filename = "." + filename
 
-    def add_chapter(self, index, name):
-        pass
-    def remove_chapter(self, index, name):
-        pass
+        dic = { "Number of Manga": len(self.Manga_Dict), "Search Location(s)" : [], "Manga List" : {} }
+        for l in self.search_locations:
+            dic["Search Location(s)"].append(l)
 
-    def __create_empty(self):
-        if self.Widgets["Info Container"].winfo_ismapped():
-            self.Widgets["Info Container"].pack_forget()
-        if self.Widgets["Control Container"].winfo_ismapped():
-            self.Widgets["Control Container"].pack_forget()
-        if self.Widgets["Chapters Container"].winfo_ismapped():
-            self.Widgets["Chapters Container"].pack_forget()
-        self.Widgets["Empty"] = Label(master=self,text="No Title Selected" """, font=Main_Window.Verdana_Bold_20""")
+        for m in self.Manga_Dict.keys():
+            dic["Manga List"][m] = self.Manga_Dict[m].save_location
 
-    def __update_Chapters(self):
-        pass
+        with open(config["Cashe Save Location"] +'/'+ filename, 'w') as f:
+            f.write(json.dumps(dic))
+            f.close()
+
+    @staticmethod
+    def _check_manga_cache_exists( search_location,manga_name ):
+        #print( search_location + '/' + manga_name)
+        if os.path.isfile(search_location+'/'+manga_name):
+            #print("exists")
+            return True
+        else:
+            return False
+
+    @staticmethod
+    def _read_manga_cache(filename):
+        manga_string = ""
+        with open(filename, 'r') as f:
+            manga_string = f.read()
+            f.close()
+        manga_dict = json.loads(manga_string)
+        if manga_dict["Site Domain"] == "https://mangapark.net":
+            manga = MangaPark_Source()
+            manga.from_dict(manga_dict)
+            return manga
+        else:
+            return None
+
+    def  _load_manga_entry(self):
+        self.update_status( "Loading Manga List.....")
+        for m in self.Manga_Dict.keys():  
+            #print("loading Entry: " + str( m ) )     
+            self._add_manga_entry(m)
+        #self.Widgets["Manga List"].show()
+        self.update_status("Loaded Manga List")
+
+    def _add_manga_entry(self,name):
+        self.Widgets["Title List"].insert(name)
+
+    def update_status(self, message=None):
+
+        if message != None:
+            self.Info["Status"].set(message)
+            #self.Widgets["Status Label"].set(message)
+
+    def _update_stream_runner( self, manga_object ):
+        #GObject.idle_add( self.Main_Window.update_status, True, self.Main_Window.Selected_Manga.get_title() + "\nUpdating Streams...")
+        self.Info["Status"].set(self.selection["Title"].get_title() + "\nUpdating Streams...")
+        try:
+
+            status = manga_object.update_streams()
+            if status == 0:
+                print("Status " + str(status))
+                manga_object.to_json_file(manga_object.save_location)
+                self.Info["Status"].set(self.selection["Title"].get_title() + "\nUpdated")
+            else:
+                messagebox.showerror("Update Error", "Site returned error " + str(status) )
+            self.threads["Stream"] = None
+        except Exception as e:
+            traceback.print_exc(file=sys.stdout)
+            print("Error occured: " + str(e))
+
+    def about(self):
+        about_dialog(master=self)
+
+
+class ChapterRow(Frame):
+    def __init__(self, title, stream, chapter, master=None,removecommand=None, downloadcommand=None,viewcommand=None,**kw):
+        Frame.__init__(self, master=master, **kw)
+        self.removecommand = removecommand
+        self.downloadcommand = downloadcommand
+        self.viewcommand = viewcommand
+        self.parent = master
+        self.downloaded = False
+        self.title = title
+        self.stream=stream
+        self.chapter=chapter
+        self.Info = {
+            "Remove" : StringVar(),
+            "Download" : StringVar(),
+            "View" : StringVar()
+        }
+        self.Info["Remove"].set("Remove")
+        self.Info["Download"].set("Download")
+        self.Info["View"].set("Veiw")
+        self.chapter_path = title.save_location + "/" + title.get_directory() +'/'+ stream.get_directory()
+        self.__ChapterNumber= chapter.get_chapter_number()
+        self.__chapterLabel = Label(master=self,
+                                    text="Chapter " +
+                                    str(chapter.get_chapter_number()) + " : " +
+                                    chapter.get_chapter_name())
+        self.__viewButton = Button(master=self, textvariable=self.Info["View"],command=self.__on_view, width=4)
+        self.__downloadButton = Button(master=self, textvariable=self.Info["Download"], command=self.__on_download, width=13)
+        self.__removeButton = Button(master=self, textvariable=self.Info["Remove"], command=self.__on_remove, width=8)
+    
+        if self.chapter.is_downloaded(self.chapter_path) == True:
+            self.__removeButton["state"] = NORMAL
+            self.__downloadButton["state"] = DISABLED
+            self.Info["Download"].set( "Downloaded" )
+            self.__viewButton["state"] = NORMAL
+        else:
+            self.__removeButton["state"] = DISABLED
+            self.__downloadButton["state"] = NORMAL
+            self.__viewButton["state"] = DISABLED
+
+    def __hash__(self):
+        return hash( (self.title, self.stream, self.chapter) )
+
+    def __on_view(self):
+        print("view button pressed")
+        if self.viewcommand != None:
+            self.viewcommand(self.__ChapterNumber)
+
+    def __on_download(self):
+        print("download button pressed")
+        if self.downloadcommand != None:
+            self.__downloadButton["state"] = DISABLED
+            self.downloadcommand(self.title, self.stream, self.chapter, self.chapter_path)
+
+    def __on_remove(self):
+        print("remove button pressed")
+        if self.removecommand != None:
+            pass
+        #self.removecommand(self.__ChapterNumber)
+
+    def update_state(self,button,active=False):
+        if button == "remove":
+            if active:
+                self.__removeButton["state"] = NORMAL
+            else:
+                self.__removeButton["state"] = DISABLED
+        elif button == "download":
+            if active:
+                self.__downloadButton["state"] = NORMAL
+            else:
+                self.__downloadButton["state"] = DISABLED
+        elif button == "view":
+            if active:
+                self.__viewButton["state"] = NORMAL
+            else:
+                self.__viewButton["state"] = DISABLED
+
+    def set_is_downloaded(self, is_downloaded=False):
+        self.downloaded = is_downloaded
+
+    def is_downloaded(self):
+        return self.downloaded
+
+    def grid(self, **kwargs):
+        self.__chapterLabel.grid(   row=0, column=0, columnspan=2,sticky=E+W, padx=2, pady=2)
+        Grid.grid_columnconfigure(self, 0, weight=1)
+        self.__removeButton.grid(   row=0, column=4, sticky=E, padx=2, pady=2)
+        self.__downloadButton.grid( row=0, column=3, sticky=E, pady=2)
+        self.__viewButton.grid(     row=0, column=2, sticky=E, pady=2)
+        Frame.grid(self, kwargs)
+
+    def pack(self, **kwargs):
+        self.__chapterLabel.pack(side=LEFT, fill=X, expand=1)
+        self.__viewButton.pack(side=RIGHT)
+        self.__downloadButton.pack(side=RIGHT)
+        self.__removeButton.pack(side=RIGHT)
+        Frame.pack(self, kwargs)
 
 
 if __name__ == "__main__":
+    config = {}
+    if os.path.exists("config.json") == True:
+        with open("config.json",'r') as f:
+            config_string = f.read()
+            config = json.loads(config_string)
+    else:
+        config["Hide Cache Files"] = True
+        config["Hide Download Directory"] = False
+        config["Cashe Save Location"] = "."
+        config["Default Download Location"] = "./Manga"
+        config["Webdriver Location"] = "./WebDrivers"
+        config["Browser Version"] = "2.45"
+        config["Browser"] = "Chrome"
+        config["Search Location(s)"] = []
+
+    if os.path.isdir(config["Default Download Location"]) == False:
+        os.makedirs( config["Default Download Location"] )
+
+    Chapter.Driver_path = config["Webdriver Location"] +'/'+config["Browser"] +'/'+ config["Browser Version"] +'/'+ "chromedriver"
+    Chapter.Driver_type = config["Browser"]
+    print(Chapter.Driver_path)
+    if platform.system() == "Windows":
+        Chapter.Driver_path += ".exe"
+    elif platform.system() == "Linux":
+        Chapter.Driver_path += "_Linux"
+    elif platform.system() == "MacOS":
+        Chapter.Driver_path += "_mac"
+    Manga_Source.set_default_save_location(config["Default Download Location"])
     main = Main_Window()
     #main.mainloop()
     #main = Tk()
-    main.style = Style()
     #print(main.style.theme_names())
-    main.style.theme_use("clam")
+    #main.style.theme_use("clam")
     #test = ScrollableFrame_pack(master=main)
     #test.pack(expand=1, fill="both")
     #for i in range(50):
     #    Label(test.get_attach_point(), text=str(i)).pack(side=LEFT)
-
     main.mainloop()

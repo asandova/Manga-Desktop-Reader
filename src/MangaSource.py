@@ -96,8 +96,18 @@ class Manga_Source:
     def get_directory(self):
         return self.directory
 
-    def get_title(self):
-        return self.Title
+    def get_title(self, group=0):
+        if group > 0:
+            s = self.Title.split(" ")
+            temp = s[0]
+            for i in range(1, len(s)):
+                if i % group == 0 and i != 0:
+                    temp += "\n" + s[i]
+                else:
+                    temp += " " + s[i]
+            return temp
+        else:
+            return self.Title
     
     def get_summary(self):
         return self.summary
@@ -109,11 +119,15 @@ class Manga_Source:
         return False
     def get_Authors(self):
         return self.authors
-    def get_Authors_str(self):
+    def get_Authors_str(self, group=0):
         authors_str = ""
-        for i in range (0 ,len( self.authors)) :
-            authors_str += self.authors[i]
-            if i+1 != len(self.authors):
+        num_of_authors = len(self.authors)
+        
+        for i in range (0 ,num_of_authors):
+            if i % group == 0 and i > 0 and i != num_of_authors:
+                authors_str += '\n\t'
+            authors_str += self.genres[i]
+            if i+1 != num_of_authors:
                 authors_str += ', '
         return authors_str
 
@@ -124,12 +138,17 @@ class Manga_Source:
         return False
     def get_Artists(self):
         return self.artists
-    def get_Artists_str(self):
+    def get_Artists_str(self, group=0):
         artists_str = ""
-        for i in range (0 ,len( self.artists)) :
-            artists_str += self.artists[i]
-            if i+1 != len(self.artists):
+        num_of_artists = len(self.artists)
+
+        for i in range (0 ,num_of_artists):
+            if i % group == 0 and i > 0 and i != num_of_artists:
+                artists_str += '\n\t'
+            artists_str += self.genres[i]
+            if i+1 != num_of_artists:
                 artists_str += ', '
+
         return artists_str
 
     def has_Genre(self, genre):
@@ -137,14 +156,20 @@ class Manga_Source:
             if g == genre:
                 return True
         return False
+
     def get_Genres(self):
         return self.genres
-    def get_Genres_str(self):
+
+    def get_Genres_str(self, group=0):
         Genres_str = ""
-        for i in range (0 ,len( self.genres)) :
+        num_of_genres = len(self.genres)
+        for i in range (0 , num_of_genres):
+            if i % group == 0 and i > 0 and i != num_of_genres:
+                Genres_str += '\n\t'
             Genres_str += self.genres[i]
-            if i+1 != len(self.genres):
+            if i+1 != num_of_genres:
                 Genres_str += ', '
+ 
         return Genres_str
 
     def get_cover_location(self):

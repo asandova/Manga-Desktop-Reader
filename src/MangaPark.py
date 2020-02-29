@@ -96,7 +96,7 @@ class MangaPark_Source(Manga_Source):
                     stream_name = self.streams[stream_id].name.replace(' ', '_')
                     c.download_chapter( save_location +'/'+self.directory+'/'+ stream_name)
                 return
-    def Download_Manga_Chapter(self, stream_id, chapter_number, location="",keep=False):
+    def Download_Manga_Chapter(self, stream_id, chapter_number, location=""):
         save_location = self.save_location
         if location != "":
             save_location == location
@@ -104,13 +104,6 @@ class MangaPark_Source(Manga_Source):
             if s.id == stream_id:
                 for k in s.chapters.keys():
                     if  s.chapters[k].get_chapter_number() == chapter_number:
-                        if keep == True:
-                            if self.keep.get(s.name) == False:
-                                self.keep[s.name] = []
-                                self.keep[s.name].append(chapter_number)
-                            else:
-                                if self.keep[s.name].count(chapter_number) == 0:
-                                    self.keep[s.name].append(chapter_number)
                         #title = self.Title.replace(" ", '_')
                         stream = self.get_stream_with_id(stream_id)
                         stream_name = stream.name.replace(' ', '_')

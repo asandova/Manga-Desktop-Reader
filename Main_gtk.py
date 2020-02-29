@@ -36,50 +36,7 @@ class MangaListBoxRow(gtk.ListBoxRow):
     def _on_delete(self, Widget):
         print("Delete row pressed")
         self.emit("remove_row",self)
-    """
-    def __lt__(self, row):
-        titles = []
-        titles.append(self.text)
-        titles.append(row.text)
-        titles.sort()
-        if self.text == titles[0]:
-            return True
-        else:
-            return False
 
-    def __gl__(self,row):
-        titles = []
-        titles.append(self.text)
-        titles.append(row.text)
-        titles.sort()
-        if self.text == titles[1]:
-            return True
-        else:
-            return False
-
-    def __eq__(self, row):
-        self_title = self.text
-        row_title = row.text
-        if self_title == row_title:
-            return True
-        else:
-            return False
-    
-    def __ne__(self, row):
-        print(row)
-        if row != None:
-            self_title = self.text
-            row_title = row.text
-            if self_title != row_title:
-                return True
-            else:
-                return False
-        else:
-            return False
-
-    def __hash__(self):
-        return hash( self.text )
-    """
     def get_text(self):
         return self.text
 
@@ -142,9 +99,9 @@ class Main_Window(gtk.Window):
         self.Widgets["Chapter Sort"].set_tooltip_text("set to descending order")
 
         self.Widgets["Main Window"].show()
+
     def get_widgets(self):
         return self.Widgets
-
 
     def _update_Manga_info_veiwer(self):
         if self.Selected_Manga != None:
@@ -256,7 +213,6 @@ class Main_Window(gtk.Window):
 
     def _on_menu_about(self,widget):
         self.About = About_Popup(self)
-
 
     def _on_chapter_keep(self, widget, state, manga, stream_id, chapter):
         print("toggled keep to " + str(state))
@@ -477,7 +433,7 @@ class Main():
             self.Main_Window._update_Manga_info_veiwer()
 
     def _add_manga_from_url_runner( self,manga_object ,url ):
-        glib.idle_add(self.Main_Window.update_status, True , url + "\t Downloading...")
+        glib.idle_add(self.Main_Window.update_status, True , url + "\tDownloading...")
         code = manga_object.request_manga(url)
 
         if code != 0:
@@ -487,7 +443,7 @@ class Main():
             
         else:
             if self.Main_Window.Manga_Dict.get(manga_object.get_title()) == None:
-                glib.idle_add(self.Main_Window.update_status, True , manga_object.get_title() + "\t Extracting...")
+                glib.idle_add(self.Main_Window.update_status, True , manga_object.get_title() + "\tExtracting...")
                 manga_object.extract_manga()
                 self.Main_Window.update_status(False, "Extraction Complete")
                 self._add_manga_entry(manga_object.get_title())
@@ -610,8 +566,8 @@ if __name__ == '__main__':
         Chapter.Driver_path += ".exe"
     elif platform.system() == "Linux":
         Chapter.Driver_path += "_Linux"
-    elif platform.system() == "MacOS":
-        Chapter.Driver_path += "_mac"
+    #elif platform.system() == "MacOS":
+    #    Chapter.Driver_path += "_mac"
     Manga_Source.set_default_save_location(config["Default Download Location"])
     main = Main("Manga_Reader_Main_Window.glade", "Manga_Reader_Viewer_window.glade", "Manga_Reader_add_manga_dialog.glade")
     gtk.main()
