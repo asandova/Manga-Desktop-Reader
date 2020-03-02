@@ -1,13 +1,23 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-from .MangaStream import Manga_Stream
+#===============================================================================#
+#title           :Source.py                                                     #
+#description     :contains the source class                                     #
+#author          :August B. Sandoval (asandova)                                 #
+#date            :2020-3-2                                                      #
+#version         :0.1                                                           #
+#usage           :defineds the source class                                     #
+#notes           :                                                              #
+#python_version  :3.6.9                                                         #
+#===============================================================================#
+from .Stream import Stream
 
 import json, platform, requests
 from bs4 import BeautifulSoup
 
 platform_type = platform.system()
 
-class Manga_Source:
+class TitleSource:
 
     hide_cache_file = False
 
@@ -17,7 +27,7 @@ class Manga_Source:
         self.site_url = ""
         self.site_domain = ""
         self.manga_extention = ""
-        self.save_location = Manga_Source.default_save_location
+        self.save_location = TitleSource.default_save_location
         self.Title = ""
         self.directory = self.Title.replace(' ', '_')
         if self.directory != "":
@@ -124,8 +134,9 @@ class Manga_Source:
         num_of_authors = len(self.authors)
         
         for i in range (0 ,num_of_authors):
-            if i % group == 0 and i > 0 and i != num_of_authors:
-                authors_str += '\n\t'
+            if group > 0:
+                if i % group == 0 and i > 0 and i != num_of_authors:
+                    authors_str += '\n\t'
             authors_str += self.genres[i]
             if i+1 != num_of_authors:
                 authors_str += ', '
@@ -143,8 +154,9 @@ class Manga_Source:
         num_of_artists = len(self.artists)
 
         for i in range (0 ,num_of_artists):
-            if i % group == 0 and i > 0 and i != num_of_artists:
-                artists_str += '\n\t'
+            if group > 0:
+                if i % group == 0 and i > 0 and i != num_of_artists:
+                    artists_str += '\n\t'
             artists_str += self.genres[i]
             if i+1 != num_of_artists:
                 artists_str += ', '
@@ -164,8 +176,9 @@ class Manga_Source:
         Genres_str = ""
         num_of_genres = len(self.genres)
         for i in range (0 , num_of_genres):
-            if i % group == 0 and i > 0 and i != num_of_genres:
-                Genres_str += '\n\t'
+            if group > 0:
+                if i % group == 0 and i > 0 and i != num_of_genres:
+                    Genres_str += '\n\t'
             Genres_str += self.genres[i]
             if i+1 != num_of_genres:
                 Genres_str += ', '
@@ -197,7 +210,7 @@ class Manga_Source:
         return None
 
     def add_stream(self, stream):
-        if isinstance(stream, Manga_Stream):
+        if isinstance(stream, TitleSource):
             print("adding stream " + stream.name)
             self.streams.append(stream)
         else:
@@ -249,7 +262,7 @@ class Manga_Source:
 
     @staticmethod
     def set_default_save_location( location):
-        Manga_Source.default_save_location = location
+        TitleSource.default_save_location = location
 
     def to_dict(self):
         dic = {}
@@ -275,7 +288,7 @@ class Manga_Source:
         self.cover_location = dictionary["Cover Location"]
         self.keep = dictionary["Keep"]
         for s in dictionary["Manga Stream(s)"]:
-            stream = Manga_Stream()
+            stream = TitleSource()
             stream.from_dict( s )
             self.streams.append( stream )
 
@@ -284,7 +297,7 @@ class Manga_Source:
         print(self.directory)
         manga_dict = self.to_dict()
         filename = self.directory
-        if Manga_Source.hide_cache_file == True:
+        if TitleSource.hide_cache_file == True:
             if platform_type == "Windows":
                 filename = "$"+self.Title
             else:

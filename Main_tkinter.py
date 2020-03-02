@@ -4,7 +4,7 @@
 #title           :Main_tkinter.py                                               #
 #description     :The Main driver script for tkinter interface for this project.#
 #author          :August B. Sandoval (asandova)                                 #
-#date            :2020-2-1                                                      #
+#date            :2020-3-2                                                      #
 #version         :0.1                                                           #
 #usage           :Main python script for Manga Desktop Reader using TKinter     #
 #notes           :                                                              #
@@ -30,30 +30,24 @@ from tk.ScrollableListBox import *
 
 import pygubu, json, os, platform, traceback, sys, shutil
 from src.MangaPark import MangaPark_Source
-from src.MangaSource import Manga_Source
-from src.MangaChapter import Chapter
-from tk.popups import add_Window, Viewer, about_dialog
+from src.TitleSource import TitleSource
+from src.Chapter import Chapter
+from tk.ChapterRow import ChapterRow
+from tk.popups import add_Window, about_dialog
+from tk.Viewer import Viewer
 from PIL import Image, ImageTk
 from queue import Queue
 import threading
 
 class Main_Window(Tk):
     
-    Verdana_Normal_15 = ("verdana", 15, "normal")
-    Verdana_Normal_13 = ("verdana", 13, "normal")
     Verdana_Normal_12 = ("verdana", 12, "normal")
     Verdana_Normal_11 = ("verdana", 11, "normal")
-    Verdana_Normal_10 = ("verdana", 10, "normal")
-    Verdana_Normal_8 = ("verdana", 8, "normal")
-    Verdana_Bold_20 = ("verdana", 20, "bold")
     Verdana_Bold_15 = ("verdana", 15, "bold")
     Verdana_Bold_13 = ("verdana", 13, "bold")
     Verdana_Bold_11 = ("verdana", 11, "bold")
-    Verdana_Bold_12 = ("verdana", 12, "bold")
-    Verdana_Bold_10 = ("verdana", 10, "bold")
-    Verdana_Bold_8 = ("verdana", 8, "bold")
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, UI_Template, *args, **kwargs):
         Tk.__init__(self,*args, **kwargs)
 
         self.style = Style()
@@ -84,7 +78,7 @@ class Main_Window(Tk):
         self["width"] = 1200
 
         self.builder = pygubu.Builder()
-        self.builder.add_from_file("Tk_GUI_Template.ui")
+        self.builder.add_from_file(UI_Template+".ui")
         self.Info = {
             "Title"     : StringVar(),
             "Authors"   : StringVar(),
@@ -211,7 +205,7 @@ class Main_Window(Tk):
         self.threads["Title"] = None
 
     def __on_add_responce(self , data):
-        domain = Manga_Source.find_site_domain(data)
+        domain = TitleSource.find_site_domain(data)
         if domain == 'mangapark.net' or domain == 'www.mangapark.net':
             print("valid responce")
             manga = MangaPark_Source()
@@ -565,104 +559,6 @@ class Main_Window(Tk):
         about_dialog(master=self)
 
 
-class ChapterRow(Frame):
-    def __init__(self, title, stream, chapter, master=None,removecommand=None, downloadcommand=None,viewcommand=None,**kw):
-        Frame.__init__(self, master=master, **kw)
-        self.removecommand = removecommand
-        self.downloadcommand = downloadcommand
-        self.viewcommand = viewcommand
-        self.parent = master
-        self.downloaded = False
-        self.title = title
-        self.stream=stream
-        self.chapter=chapter
-        self.Info = {
-            "Remove" : StringVar(),
-            "Download" : StringVar(),
-            "View" : StringVar()
-        }
-        self.Info["Remove"].set("Remove")
-        self.Info["Download"].set("Download")
-        self.Info["View"].set("Veiw")
-        self.chapter_path = title.save_location + "/" + title.get_directory() +'/'+ stream.get_directory()
-        self.__ChapterNumber= chapter.get_chapter_number()
-        self.__chapterLabel = Label(master=self,
-                                    text="Chapter " +
-                                    str(chapter.get_chapter_number()) + " : " +
-                                    chapter.get_chapter_name())
-        self.__viewButton = Button(master=self, textvariable=self.Info["View"],command=self.__on_view, width=4)
-        self.__downloadButton = Button(master=self, textvariable=self.Info["Download"], command=self.__on_download, width=13)
-        self.__removeButton = Button(master=self, textvariable=self.Info["Remove"], command=self.__on_remove, width=8)
-    
-        if self.chapter.is_downloaded(self.chapter_path) == True:
-            self.__removeButton["state"] = NORMAL
-            self.__downloadButton["state"] = DISABLED
-            self.Info["Download"].set( "Downloaded" )
-            self.__viewButton["state"] = NORMAL
-        else:
-            self.__removeButton["state"] = DISABLED
-            self.__downloadButton["state"] = NORMAL
-            self.__viewButton["state"] = DISABLED
-
-    def __hash__(self):
-        return hash( (self.title, self.stream, self.chapter) )
-
-    def __on_view(self):
-        print("view button pressed")
-        if self.viewcommand != None:
-            self.viewcommand(self.__ChapterNumber)
-
-    def __on_download(self):
-        print("download button pressed")
-        if self.downloadcommand != None:
-            self.__downloadButton["state"] = DISABLED
-            self.downloadcommand(self.title, self.stream, self.chapter, self.chapter_path)
-
-    def __on_remove(self):
-        print("remove button pressed")
-        if self.removecommand != None:
-            pass
-        #self.removecommand(self.__ChapterNumber)
-
-    def update_state(self,button,active=False):
-        if button == "remove":
-            if active:
-                self.__removeButton["state"] = NORMAL
-            else:
-                self.__removeButton["state"] = DISABLED
-        elif button == "download":
-            if active:
-                self.__downloadButton["state"] = NORMAL
-            else:
-                self.__downloadButton["state"] = DISABLED
-        elif button == "view":
-            if active:
-                self.__viewButton["state"] = NORMAL
-            else:
-                self.__viewButton["state"] = DISABLED
-
-    def set_is_downloaded(self, is_downloaded=False):
-        self.downloaded = is_downloaded
-
-    def is_downloaded(self):
-        return self.downloaded
-
-    def grid(self, **kwargs):
-        self.__chapterLabel.grid(   row=0, column=0, columnspan=2,sticky=E+W, padx=2, pady=2)
-        Grid.grid_columnconfigure(self, 0, weight=1)
-        self.__removeButton.grid(   row=0, column=4, sticky=E, padx=2, pady=2)
-        self.__downloadButton.grid( row=0, column=3, sticky=E, pady=2)
-        self.__viewButton.grid(     row=0, column=2, sticky=E, pady=2)
-        Frame.grid(self, kwargs)
-
-    def pack(self, **kwargs):
-        self.__chapterLabel.pack(side=LEFT, fill=X, expand=1)
-        self.__viewButton.pack(side=RIGHT)
-        self.__downloadButton.pack(side=RIGHT)
-        self.__removeButton.pack(side=RIGHT)
-        Frame.pack(self, kwargs)
-
-
 if __name__ == "__main__":
     config = {}
     if os.path.exists("config.json") == True:
@@ -689,16 +585,7 @@ if __name__ == "__main__":
         Chapter.Driver_path += ".exe"
     elif platform.system() == "Linux":
         Chapter.Driver_path += "_Linux"
-    elif platform.system() == "MacOS":
-        Chapter.Driver_path += "_mac"
-    Manga_Source.set_default_save_location(config["Default Download Location"])
-    main = Main_Window()
-    #main.mainloop()
-    #main = Tk()
-    #print(main.style.theme_names())
-    #main.style.theme_use("clam")
-    #test = ScrollableFrame_pack(master=main)
-    #test.pack(expand=1, fill="both")
-    #for i in range(50):
-    #    Label(test.get_attach_point(), text=str(i)).pack(side=LEFT)
+    TitleSource.set_default_save_location(config["Default Download Location"])
+    main = Main_Window( UI_Template=config["UI"]["Main"] )
+
     main.mainloop()

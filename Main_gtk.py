@@ -7,9 +7,9 @@ GObject.threads_init()
 glib.threads_init()
 #from gi.repository.GdkPixbuf import Pixbuf
 from src.MangaPark import MangaPark_Source
-from src.MangaSource import Manga_Source
+from src.TitleSource import TitleSource
 from gtk3.ChapterListRow import ChapterListBoxRow
-from src.MangaChapter import Chapter
+from src.Chapter import Chapter
 from gtk3.GUI_Popups import Error_Popup, Warning_Popup, Info_Popup, add_Popup, About_Popup
 
 import threading
@@ -244,10 +244,10 @@ class Main_Window(gtk.Window):
 
 
 class Main():
-    def __init__(self, Main_Window_Glade, Viewer_Window_Glade, Add_Dialog_Glade):
+    def __init__(self, UI_Main_Template, Viewer_Window_Glade, Add_Dialog_Glade):
         self.Active_threads = []
         self.search_locations = []
-        self.Main_Window = Main_Window(Main_Window_Glade)
+        self.Main_Window = Main_Window(UI_Main_Template+".glade")
         self.Widgets = self.Main_Window.get_widgets()
         self.Viewer_Window_Glade = Viewer_Window_Glade
         self.Add_Dialog_Glade = Add_Dialog_Glade
@@ -263,7 +263,6 @@ class Main():
         self._get_manga_list_from_file()
         self._load_manga_entry()
         self.Main_Window.update_status(False, "Loaded Manga List")
-
 
     def _on_download_all(self,widget):
         self.Main_Window.Widgets[ "Download all chapters Button"].set_sensitive(False)
@@ -282,7 +281,6 @@ class Main():
             c.download_chapter(path)
         GObject.idle_add(self.Main_Window.update_status, False, "Downloaded " + manga.get_title() + " : Stream " + stream.get_name())
         
-
     def Quit(self, widget, data):
         self.Main_Window.update_status(True, "exporting Manga List")
         self.export_manga_list_to_file()
@@ -461,7 +459,7 @@ class Main():
         response = Entry_popup.run()
 
         if response == gtk.ResponseType.OK:
-            domain = Manga_Source.find_site_domain(self.Main_Window.entered_url)
+            domain = TitleSource.find_site_domain(self.Main_Window.entered_url)
             if domain == 'mangapark.net' or domain == 'www.mangapark.net':
                 manga = MangaPark_Source()
                 #print(manga.save_location)
@@ -568,6 +566,6 @@ if __name__ == '__main__':
         Chapter.Driver_path += "_Linux"
     #elif platform.system() == "MacOS":
     #    Chapter.Driver_path += "_mac"
-    Manga_Source.set_default_save_location(config["Default Download Location"])
-    main = Main("Manga_Reader_Main_Window.glade", "Manga_Reader_Viewer_window.glade", "Manga_Reader_add_manga_dialog.glade")
+    TitleSource.set_default_save_location(config["Default Download Location"])
+    main = Main(config["UI"]["Main"], "Manga_Reader_Viewer_window.glade", "Manga_Reader_add_manga_dialog.glade")
     gtk.main()

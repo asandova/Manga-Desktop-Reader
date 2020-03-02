@@ -6,6 +6,10 @@
     "Webdriver Location" : "./WebDrivers",
     "Browser Version" : "2.45",
     "Browser" : "Chrome",
+    "UI" : {
+        "Main" : "Main_Window",
+        "Viewer" : "Viewer"
+    },
     "Search Location(s)" : [ 
         "./Manga"
     ]

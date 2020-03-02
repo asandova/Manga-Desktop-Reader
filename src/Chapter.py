@@ -1,5 +1,15 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+#===============================================================================#
+#title           :Chapter.py                                                    #
+#description     :Contains a generic chapter object definition                  #
+#author          :August B. Sandoval (asandova)                                 #
+#date            :2020-3-2                                                      #
+#version         :0.1                                                           #
+#usage           :Mdefins the chapter class                                     #
+#notes           :                                                              #
+#python_version  :3.6.9                                                         #
+#===============================================================================#
 from bs4 import BeautifulSoup
 
 import requests,traceback, sys, os, shutil
