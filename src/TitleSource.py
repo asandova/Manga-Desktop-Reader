@@ -302,6 +302,7 @@ class TitleSource:
                 filename = "$"+self.Title
             else:
                 filename = "."+self.Title
+                
         with open(save_location +"/" + self.directory +'/' +filename+ ".json", 'w') as f:
             f.write(json.dumps( manga_dict, indent=1 ))
             f.close()

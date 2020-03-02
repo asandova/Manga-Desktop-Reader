@@ -28,7 +28,7 @@ except:
 from tk.ScrollableFrame import *
 from tk.ScrollableListBox import *
 
-import pygubu, json, os, platform, traceback, sys, shutil
+import pygubu, json, os, platform, traceback, sys, shutil, re, threading
 from src.MangaPark import MangaPark_Source
 from src.TitleSource import TitleSource
 from src.Chapter import Chapter
@@ -37,7 +37,6 @@ from tk.popups import add_Window, about_dialog
 from tk.Viewer import Viewer
 from PIL import Image, ImageTk
 from queue import Queue
-import threading
 
 class Main_Window(Tk):
     
@@ -144,6 +143,8 @@ class Main_Window(Tk):
 
         self.Widgets["Status Label"]["textvariable"] = self.Info["Status"]
         self.Widgets["Update Button"].config(command=self._on_Update)
+
+        self.Widgets["Search Entry"].bind("<Return>", self._on_search_change)
         
         self.Widgets["Main Window"].pack(fill=BOTH,expand=1)
         self.Widgets["Title List"] = ScrollableListbox(master=self.Widgets["Title Frame"], command=self._on_list_select)
@@ -161,7 +162,7 @@ class Main_Window(Tk):
         self._load_manga_entry()
 
     def _on_list_select(self, val):
-        print(val)
+        #print(val)
         self.selection["Title"] = self.Manga_Dict[val[1]]
         self.selection["Stream"] = None
         if self.Widgets["InfoFrame"].winfo_ismapped() == False:
@@ -170,12 +171,28 @@ class Main_Window(Tk):
         self.update_title_details()
         self._update_stream_dropdown()
         self._update_Chapter_list()
-        print("list item selected")
+        #print("list item selected")
 
     def on_menu_add(self):
-        print("on menu add")
+        #print("on menu add")
         self.Widgets["Add Popup"] = add_Window(master=self,OKCommand=self.__on_add_responce)
     
+    def _on_search_change(self, event=None):
+        #print(f"Search Changed: {widget.get_text()} ")
+        text = self.Widgets["Search Entry"].get()
+        #print( self.Widgets["Search Entry"].get() )
+        self.Widgets["Title List"].remove_all()
+        if text == "":
+            for t in self.Manga_Dict.keys():
+                self._add_manga_entry(t)
+
+        else:
+            pattern = re.compile( "(" + text.lower() + ")" )
+            for t in self.Manga_Dict.keys():
+                #print(t)
+                if re.search(pattern, t.lower()) != None:
+                    self._add_manga_entry(t)
+
     def _add_manga_from_url_runner( self ):
         while self.TitleQueue.empty() == False :
             if self.__KillThreads == True:
@@ -207,24 +224,24 @@ class Main_Window(Tk):
     def __on_add_responce(self , data):
         domain = TitleSource.find_site_domain(data)
         if domain == 'mangapark.net' or domain == 'www.mangapark.net':
-            print("valid responce")
+            #print("valid responce")
             manga = MangaPark_Source()
-            print(manga.save_location)
+            #print(manga.save_location)
             self.TitleQueue.put( (manga, data) )
             if self.threads["Title"] == None:
-                print("Starting Download Thread")
+                #print("Starting Download Thread")
                 self.threads["Title"] = threading.Thread(target=self._add_manga_from_url_runner)
                 self.threads["Title"].start()        
             
         elif domain == None:
-            print("invalid reponce")
+            #print("invalid reponce")
             messagebox.showerror("Invalid","Invalid site domain")
         else:
-            print("Invalid responce")
+            #print("Invalid responce")
             messagebox.showerror("Unsupported Manga Site",domain + " is currently not supported")
 
     def on_quit(self):
-        print("exporting manga list")
+        #print("exporting manga list")
         self.export_manga_list_to_file()
         if self.threads["Title"] != None:
             result = messagebox.askyesno("Active Download", "Do you want to wait title to download?")
@@ -254,8 +271,8 @@ class Main_Window(Tk):
 
     def _on_Update(self):
         #status = self.Main_Window._check_all_selections()
-        print("Update Stream button pressed")
-        print("Updating: " + self.selection["Title"].get_title())
+        #print("Update Stream button pressed")
+        #print("Updating: " + self.selection["Title"].get_title())
 
         if self.selection["Title"] != None:
             if self.threads["Stream"] == None:
@@ -285,10 +302,10 @@ class Main_Window(Tk):
             shutil.rmtree(location)
             del self.Manga_Dict[self.selection["Title"].get_title()]
             self.Widgets["Title List"].delete( self.selection["Title"].get_title() )
-        print("Remove button pressed")
+        #print("Remove button pressed")
 
     def __on_view(self, number):
-        print("view chapter " + str(number))
+        #print("view chapter " + str(number))
         self.selection["Chapter"] = self.selection["Stream"].get_chapter(number)
         v = Viewer.get_instance( self.selection["Title"], self.selection["Stream"], self.selection["Chapter"] )
         if v != None:
@@ -300,11 +317,11 @@ class Main_Window(Tk):
         pass
 
     def _on_stream_change(self, event):
-        print("Stream change")
+        #print("Stream change")
         self.selection["Stream"] = self.selection["Title"].get_stream_with_name(
             self.Widgets["Stream Select"].get()
         )
-        print(self.Widgets["Stream Select"].get())
+        #print(self.Widgets["Stream Select"].get())
         self._update_Chapter_list()
 
     def _update_stream_dropdown(self):
@@ -317,7 +334,6 @@ class Main_Window(Tk):
             #print(streamlist[i].get_name())
             streamlist_names.append(streamlist[i].get_name())
         self.Widgets["Stream Select"]["values"] = streamlist_names
-
 
     def _update_Chapter_list(self):
         #print("in _update_chapter_list")
@@ -356,13 +372,12 @@ class Main_Window(Tk):
                     self.Chapter_List = []
 
     def __download_chapter(self, title, stream, chapter, location):
-        print("Chapter download buttom pressed")
+        #print("Chapter download buttom pressed")
         self.ChapterQueue.put( (title, stream, chapter, location) )
         if self.threads["Chapter"] == None:
             self.threads["Chapter"] = threading.Thread( target=self.__download_chapter_runner )
             self.threads["Chapter"].start()
             
-
     def  __download_chapter_runner(self):
         while self.ChapterQueue.empty() == False:
             if self.__KillThreads == True:
@@ -428,13 +443,11 @@ class Main_Window(Tk):
     def _get_manga_list_from_file(self):
         filename = 'tracking_list.json'
         if config['Hide Cache Files']== True:
-            if platform.system() == "Windows":
-                filename = "$" + filename
-            else:
+            if platform.system() == "Linux":
                 filename = "." + filename
 
         if os.path.exists(config["Cashe Save Location"] +'/'+filename) != True:
-            print("Cache file not found")
+            #print("Cache file not found")
             self.Manga_Dict = {}
             self.search_locations = ["."]
         else:
@@ -467,9 +480,9 @@ class Main_Window(Tk):
             #print("Searching for untracked Manga")
             for search in config["Search Location(s)"]:
                 dirs = os.listdir(search)
-                print(dirs)
+                #print(dirs)
                 for d in dirs:
-                    print("Checking " + str(d))
+                    #print("Checking " + str(d))
                     path = search + '/'+ d + "/" + d + '.json'
                     if os.path.isfile(path) == True:
                         manga_object = self._read_manga_cache( path)
@@ -482,9 +495,7 @@ class Main_Window(Tk):
     def export_manga_list_to_file(self):
         filename = 'tracking_list.json'
         if config['Hide Cache Files']== True:
-            if platform.system()  == "Windows":
-                filename = "$" + filename
-            else:
+            if platform.system()  == "Linux":
                 filename = "." + filename
 
         dic = { "Number of Manga": len(self.Manga_Dict), "Search Location(s)" : [], "Manga List" : {} }
@@ -545,7 +556,7 @@ class Main_Window(Tk):
 
             status = manga_object.update_streams()
             if status == 0:
-                print("Status " + str(status))
+                #print("Status " + str(status))
                 manga_object.to_json_file(manga_object.save_location)
                 self.Info["Status"].set(self.selection["Title"].get_title() + "\nUpdated")
             else:
@@ -578,9 +589,11 @@ if __name__ == "__main__":
     if os.path.isdir(config["Default Download Location"]) == False:
         os.makedirs( config["Default Download Location"] )
 
+    TitleSource.hide_cache_file = config["Hide Cache Files"]
+
     Chapter.Driver_path = config["Webdriver Location"] +'/'+config["Browser"] +'/'+ config["Browser Version"] +'/'+ "chromedriver"
     Chapter.Driver_type = config["Browser"]
-    print(Chapter.Driver_path)
+    #print(Chapter.Driver_path)
     if platform.system() == "Windows":
         Chapter.Driver_path += ".exe"
     elif platform.system() == "Linux":

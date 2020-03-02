@@ -1,5 +1,15 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+#===============================================================================#
+#title           :Main_gtk.py                                                   #
+#description     :contains the driver script                                    #
+#author          :August B. Sandoval (asandova)                                 #
+#date            :2020-3-2                                                      #
+#version         :0.1                                                           #
+#usage           :the driver script using gtk3 GUI library                      #
+#notes           :                                                              #
+#python_version  :3.6.9                                                         #
+#===============================================================================#
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk as gtk,GLib as glib, GObject
@@ -9,36 +19,12 @@ glib.threads_init()
 from src.MangaPark import MangaPark_Source
 from src.TitleSource import TitleSource
 from gtk3.ChapterListRow import ChapterListBoxRow
+from gtk3.TitleListBoxRow import TitleListBoxRow
 from src.Chapter import Chapter
 from gtk3.GUI_Popups import Error_Popup, Warning_Popup, Info_Popup, add_Popup, About_Popup
 
 import threading
 import json, os, platform, re, shutil,traceback, sys
-
-
-class MangaListBoxRow(gtk.ListBoxRow):
-    __gsignals__ = { "remove_row" : (GObject.SIGNAL_RUN_FIRST,None,(GObject.TYPE_PYOBJECT,)) }
-
-    def __init__(self,Label_text,*args,**kwargs):
-        gtk.ListBoxRow.__init__(self, *args,**kwargs)
-        self.RowWidgets = {}
-        self.RowWidgets["Box"] = gtk.Box()
-        self.RowWidgets["Title Label"] = gtk.Label(Label_text, xalign=0)
-        self.RowWidgets["Title Label"].set_line_wrap_mode(0)
-        self.RowWidgets["Delete Button"] = gtk.Button.new_from_icon_name("gtk-close",1)
-        self.text = Label_text
-        self.RowWidgets["Box"].pack_start(self.RowWidgets["Delete Button"],0,0,2)
-        self.RowWidgets["Box"].pack_start(self.RowWidgets["Title Label"],0,0,2)
-        self.RowWidgets["Delete Button"].connect('clicked',self._on_delete)
-        self.add(self.RowWidgets["Box"])
-        self.show_all()
-
-    def _on_delete(self, Widget):
-        print("Delete row pressed")
-        self.emit("remove_row",self)
-
-    def get_text(self):
-        return self.text
 
 class Main_Window(gtk.Window):
 
@@ -76,25 +62,16 @@ class Main_Window(gtk.Window):
             "Link"              : self.builder.get_object("Manga_Link"),
             "Chapter Sort"      : self.builder.get_object("Sort_Toggle"),
             "Sort Image"        : self.builder.get_object("sort_button_image"),
-            #"View Chapter Button"           : self.builder.get_object("View_Chapter"),
-            #"Download Chapter Button"       : self.builder.get_object("download_chapter_button"),
             "Download all chapters Button"  : self.builder.get_object("download_all_button"),
             "Add Manga"                     : self.builder.get_object("Add_Manga_Menu_Button"),
-            #"Chapter Buttons" : [],
             "Manga Title Buttons" : {}
 
         }
-        #self.builder.connect_signals(self)
-        #self.Widgets["Main Window"].connect("delete-event", self.Quit)
         self.Widgets["Stream Select"].connect("changed",self._on_stream_change)
         self.Widgets["Manga List"].connect("row_selected",self._on_manga_list_button)
         self.Widgets["Manga List"].connect("selected-rows-changed",self._on_manga_list_button)
         self.Widgets["About"].connect("activate",self._on_menu_about)
         self.Widgets["Chapter Sort"].connect("clicked", self._on_sort_clicked)
-        #self.Widgets[ "Download all chapters Button"].set_sensitive( False ) 
-        #self.Widgets[ "Download all chapters Button"].set_tooltip_text("not Implemented")
-        #self.Widgets["Chapter List Box"].connect("row-selected",self._on_chapter_select)
-        #self.Widgets["Chapter List Box"].connect("selected-rows-changed",self._on_chapter_select)
         self.Widgets["Sort Image"].set_from_icon_name("gtk-sort-descending",1)
         self.Widgets["Chapter Sort"].set_tooltip_text("set to descending order")
 
@@ -115,7 +92,6 @@ class Main_Window(gtk.Window):
             self.Widgets["Artists Label"].set_label("Artist(s): " + self.Selected_Manga.get_Artists_str())
             self.Widgets["Genre Label"].set_label("Genre(s): " + self.Selected_Manga.get_Genres_str())
             self.Widgets["Summary Label"].set_label(self.Selected_Manga.get_summary())
-            #print(self.Selected_Manga.site_url)
             self.Widgets["Link"].set_uri(self.Selected_Manga.site_url)
             self.Widgets["Link"].set_label("Visit Manga Site")
 
@@ -290,9 +266,7 @@ class Main():
     def _get_manga_list_from_file(self):
         filename = 'tracking_list.json'
         if config['Hide Cache Files']== True:
-            if platform.system() == "Windows":
-                filename = "$" + filename
-            else:
+            if platform.system() == "Linux":
                 filename = "." + filename
 
         if os.path.exists(config["Cashe Save Location"] +'/'+filename) != True:
@@ -391,7 +365,7 @@ class Main():
                     m.hide()
 
     def _add_manga_entry(self,name):
-        row = MangaListBoxRow(name)
+        row = TitleListBoxRow(name)
         #print(row)
         row.show()
         self.Widgets["Manga Title Buttons"][row] = name
@@ -483,10 +457,8 @@ class Main():
 
     def export_manga_list_to_file(self):
         filename = 'tracking_list.json'
-        if config['Hide Cache Files']== True:
-            if platform.system()  == "Windows":
-                filename = "$" + filename
-            else:
+        if config['Hide Cache Files'] == True:
+            if platform.system()  == "Linux":
                 filename = "." + filename
 
         dic = { "Number of Manga": len(self.Main_Window.Manga_Dict), "Search Location(s)" : [], "Manga List" : {} }

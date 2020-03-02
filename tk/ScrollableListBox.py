@@ -1,4 +1,16 @@
 #!/usr/bin/python3
+# -*- coding: utf-8 -*-
+#===============================================================================#
+#title           :ScrollableListBox.py                                          #
+#description     :Defines a acrollable Listbox widget for tkinter               #
+#author          :August B. Sandoval (asandova)                                 #
+#date            :2020-3-2                                                      #
+#version         :0.1                                                           #
+#usage           :Defines a acrollable Listbox widget                           #
+#notes           :                                                              #
+#python_version  :3.6.9                                                         #
+#===============================================================================#
+
 try:
     from Tkinter import Tk, Frame, Scrollbar, Listbox ,LEFT, RIGHT, TOP, BOTTOM, BOTH, N, E, S ,W, Grid, SINGLE, END
     from Tkinter.ttk import *
@@ -54,6 +66,10 @@ class ScrollableListbox(Frame):
                 return 0
         return 1
         
+    def remove_all(self):
+        self.__TitleList = []
+        self.__ListBox.delete(0,self.__ListBox.size())
+
     def __find_insertion_point(self, text):
         l = self.__TitleList
         l.append(text)

@@ -1,5 +1,15 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+#===============================================================================#
+#title           :ScrollableFrame.py                                            #
+#description     :Defines a Scrollable Frame widget for tkinter                 #
+#author          :August B. Sandoval (asandova)                                 #
+#date            :2020-3-2                                                      #
+#version         :0.1                                                           #
+#usage           :Defines a scrollable frame widget                             #
+#notes           :                                                              #
+#python_version  :3.6.9                                                         #
+#===============================================================================#
 
 from tkinter import Tk, Frame, Canvas, Scrollbar, LEFT, RIGHT, TOP, BOTTOM, X, Y, BOTH, N, W, S, E, Label, Grid, Button
 try:
@@ -107,12 +117,7 @@ class ScrollableFrame(Frame):
             self.__HScroll.pack(side=LEFT, fill=X, expand=1)
             self.__coner.pack(side=LEFT, fill="none", expand=0)
 
-        self.__ScrollFrame.bind(
-            "<Configure>",
-            lambda e: self.__Canvas.configure(
-                scrollregion=self.__Canvas.bbox("all")
-            )
-        )
+        self.__ScrollFrame.bind("<Configure>", self.scrollregion_change)
 
         self.__Canvas.configure(yscrollcommand=self.__VScroll.set, xscrollcommand=self.__HScroll.set)
         self.__Canvas.configure(scrollregion=self.__Canvas.bbox("all"))
@@ -139,11 +144,7 @@ class ScrollableFrame(Frame):
         self.__HScroll.grid(row=self.__HScrollPos[0], column=self.__HScrollPos[1],sticky=E+W)
         self.__VScroll.grid(row=self.__VScrollPos[0], column=self.__VScrollPos[1],sticky=N+S)
         self.__Canvas.grid(row=self.__CanvasPos[0], column=self.__CanvasPos[1],sticky=N+S+E+W)
-        self.__ScrollFrame.bind("<Configure>", 
-            lambda e: self.__Canvas.configure(
-                scrollregion=self.__Canvas.bbox("all")
-            )
-        )
+        self.__ScrollFrame.bind("<Configure>", self.scrollregion_change)
 
         self.__Canvas.configure(yscrollcommand=self.__VScroll.set, xscrollcommand=self.__HScroll.set)
         self.__Canvas.configure(scrollregion=self.__Canvas.bbox("all"))
@@ -154,7 +155,7 @@ class ScrollableFrame(Frame):
         Frame.grid(self, **kwargs)
 
     def scrollregion_change(self,event):
-        print(event)
+        #print(event)
         self.__Canvas.configure(
             scrollregion=self.__Canvas.bbox("all")
         )
@@ -195,8 +196,8 @@ class ScrollableFrame(Frame):
             self.__Canvas.yview_scroll( int(-1 * (event.delta/120)), "units" )
 
     def __on_shift_mousewheel(self,event):
-        print(event)
-        print( event.delta )
+        #print(event)
+        #print( event.delta )
         delta = event.delta
         if platform.system() == "Linux":
             if event.num == 5:

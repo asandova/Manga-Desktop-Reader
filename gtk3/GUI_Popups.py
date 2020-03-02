@@ -1,5 +1,16 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+#===============================================================================#
+#title           :ChapterListRow.py                                             #
+#description     :creates a custom gtk popups                                   #
+#author          :August B. Sandoval (asandova)                                 #
+#date            :2020-3-2                                                      #
+#version         :0.1                                                           #
+#usage           :Defines a custom gtk popups                                   #
+#notes           :                                                              #
+#python_version  :3.6.9                                                         #
+#===============================================================================#
+
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk as gtk

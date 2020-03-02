@@ -4,7 +4,7 @@
 #title           :popups.py                                                     #
 #description     :contains custom tkinter toplevel windows                      #
 #author          :August B. Sandoval (asandova)                                 #
-#date            :2020-2-1                                                      #
+#date            :2020-3-2                                                      #
 #version         :0.1                                                           #
 #usage           :defines mulitple custom tkinter toplevel windows              #
 #notes           :                                                              #
@@ -45,14 +45,14 @@ class add_Window(Toplevel):
         self.resizable(1,0)
 
     def Accept(self):
-        print("Accept button pressed")
+        #print("Accept button pressed")
         print( "\"" + self.Value.get()+ "\"")
         if self.AcceptCommand != None:
             self.AcceptCommand(self.Value.get())
         self.destroy()
 
     def Cancel(self):
-        print("Cancel Button pressed")
+        #print("Cancel Button pressed")
         if self.CancelCommand != None:
             self.CancelCommand()
         self.destroy()

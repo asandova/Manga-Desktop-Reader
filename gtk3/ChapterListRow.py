@@ -1,5 +1,16 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+#===============================================================================#
+#title           :ChapterListRow.py                                             #
+#description     :creates a custom gtk ListRowBox and Window  widget            #
+#author          :August B. Sandoval (asandova)                                 #
+#date            :2020-3-2                                                      #
+#version         :0.1                                                           #
+#usage           :Defines a custom gtk ListRowBox and Window object             #
+#notes           :                                                              #
+#python_version  :3.6.9                                                         #
+#===============================================================================#
+
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk as gtk, GObject
@@ -93,7 +104,6 @@ class ChapterListBoxRow(gtk.ListBoxRow):
         self.id = hash(self)
 
         self.add_to_active()
-        #    ChapterListBoxRow.active[ self.id ]["Displayed"] = self
         self.RowWidgets["Row Box"].show()
         self.RowWidgets["Button Box"].show()
         self.RowWidgets["Label"].show()
@@ -131,7 +141,6 @@ class ChapterListBoxRow(gtk.ListBoxRow):
                 return True
         else:
             return False
-
 
     @staticmethod
     def get_instance( manga,stream_id, chapter ):
@@ -324,19 +333,7 @@ class ChapterListBoxRow(gtk.ListBoxRow):
     
     def __hash__(self):
         return hash( (self.manga, self.stream_id, self.chapter_number) ) 
-    """
-    def __eq__(self, other):
-        if isinstance(other, ChapterListBoxRow) == True:
-            if self.chapter_number == other.chapter_number:
-                return True
-        return False
 
-    def __ne__(self, other):
-        if isinstance(other, ChapterListBoxRow) == True:
-            if self.chapter_number != other.chapter_number:
-                return True
-        return False
-    """
     def isEqual(self, other):
         if isinstance(other, ChapterListBoxRow) == True:
             if self.manga == other.manga:
@@ -344,9 +341,6 @@ class ChapterListBoxRow(gtk.ListBoxRow):
                     if self.chapter_number == other.chapter_number:
                         return True
         return False
-
-    #def __str__(self):
-    #    return f"Chapter {self.chapter_number}"
 
 #---------------------------------------------------------------------------------------------------------------------
 
@@ -399,7 +393,7 @@ class ViewerWindow(gtk.Window):
         self.extract_zip()
         self.update_page(self.current_page_number)
 
-        print("Opening viewer")
+        #print("Opening viewer")
         self.Widgets["Viewer Window"].show_all()
 
     def _on_back(self,widget):
@@ -418,7 +412,7 @@ class ViewerWindow(gtk.Window):
 
     def extract_zip(self):
         #print("extracting..")
-        print(self.save_location + '/'+self.chapter.get_full_title() + '.zip' )
+        #print(self.save_location + '/'+self.chapter.get_full_title() + '.zip' )
         with ZipFile(self.save_location + '/'+self.chapter.get_full_title() + '.zip','r') as zip:
             zip.extractall(self.save_location+'/'+self.chapter.get_full_title() )
         pages = os.listdir(self.save_location+'/'+self.chapter.get_full_title() )
@@ -430,10 +424,10 @@ class ViewerWindow(gtk.Window):
             self.page_image[ num ] = page
 
     def remove_pages(self):
-        print("removing pages")
-        print( self.save_location+'/'+self.chapter.get_directory() )
+        #print("removing pages")
+        #print( self.save_location+'/'+self.chapter.get_directory() )
         shutil.rmtree( self.save_location+'/'+self.chapter.get_directory() )
-        print("pages removed")
+        #print("pages removed")
 
     def update_page(self, page_number):
         self.Widgets["Page Image"].clear()
@@ -498,7 +492,7 @@ class ViewerWindow(gtk.Window):
         self.destroy()
 
     def _on_quit(self, widget):
-        print("exiting")
+        #print("exiting")
         self.remove_pages()
         ChapterListBoxRow.delete_viewer(self.manga,self.stream_id,self.chapter)
         self.Widgets["Viewer Window"].destroy()
