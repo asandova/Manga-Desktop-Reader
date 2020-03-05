@@ -23,29 +23,29 @@ If you wish run from source, please make sure the following python 3 packages ar
 * **beautifulsoup4** - HTML extractor
 * **PyObject** - GTK python/C++ binding library
 * **pygubu** - Tkinter gui builder
+
+
+#### Run from Source
+To run from source make sure to install the following python packages.
+```
+pip3 install selenium, lxml, requests, beautifulsoup4, PyObject(Linux only), pygubu (tkinter GUI only)
+```
 ### Linux
-
-#### From Source
-To run from source make sure to install the following python packages, else download the zip file containing the Linux executable.
-
-```
-pip3 install selenium, lxml, requests, beautifulsoup4, PyObject, pygubu (tkinter GUI only)
-```
+To run the application on Linux download the zip file containing the Linux executable.
 ### Windows
-
-To run the application on windows download the zip file containing the windows executable.
+To run the application on Windows download the zip file containing the windows executable.
 
 ### Configure
 This application uses a json configurtion file called config.json
 
 #### Webdriver
-The WebDriver is how Selenium creates a headless webbrowser for extracting the HTML elements needed, that only generate when in a browser. This Application uses these drivers for generating the manga's chapter pages so thay can be extracted. 
+The WebDriver is how Selenium creates a headless webbrowser for extracting the HTML elements needed that are only generate when in a browser. This Application uses these drivers for generating the title's chapter pages so thay can be extracted. 
 This webdriver must support the version of a web browser already installed on your system (e.g. Google Chome, Firefox).
 
 **Note** - currently only drivers for Google Chrome have been tested.
 Additional drivers can be found [here](https://selenium.dev/downloads/)
 
-In the config file there are three properies need to tell the application which driver to use.
+In the config file there are four properies need to tell the application which web driver to use and how to place interface elements.
 ```
     "Webdriver Location" : "./WebDrivers",
     "Browser Version" : "2.45",
@@ -59,12 +59,9 @@ In the config file there are three properies need to tell the application which 
 * **Browser Version** - Specifies the version number of your normal Webbrowser already installed in your system
 * **Browser** - Specifies the target browser to use.
 
-* **UI** - This application allows for some customization for its interface. This is done by template files for both tkinter and gtk. The template files for GTK have the file extention ".glade" and tkinter ".ui". These are generate by glade and pygubu respectively.
+* **UI** - This application allows for some customization for its interface. This is done with template files for both tkinter and gtk. The template files for GTK have the file extention ".glade" and tkinter ".ui". These are generate by Glade and Pygubu-designer respectively.
 * **Main** - is the path to the Main interface file without the extention for your given interface
 * **Viewer** - is the path to the Viewer interface file without the extention for your given interface (tkinter version currently doesn't support this option)
-
-### Run
-Download the apporpriate execuable for your system and run.
 
 ## Version
 
