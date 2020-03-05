@@ -1,14 +1,24 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-from manga_chapter import Chapter
-from Manga_Source import Manga_Source
-from manga_stream import Manga_Stream
+#===============================================================================#
+#title           :MangaPark.py                                                  #
+#description     :contains the MangaPark class                                  #
+#author          :August B. Sandoval (asandova)                                 #
+#date            :2020-3-2                                                      #
+#version         :0.1                                                           #
+#usage           :defineds the MangaPark class                                  #
+#notes           :                                                              #
+#python_version  :3.6.9                                                         #
+#===============================================================================#
+from .Chapter import Chapter
+from .TitleSource import TitleSource
+from .Stream import Stream
 
 from bs4 import BeautifulSoup
 import requests, re, json, os
 
 
-class MangaPark_Source(Manga_Source):
+class MangaPark_Source(TitleSource):
 
     Versions = {
         "Duck"  :    4,
@@ -22,7 +32,7 @@ class MangaPark_Source(Manga_Source):
     }
 
     def __init__(self):
-        Manga_Source.__init__(self)
+        TitleSource.__init__(self)
         self.site_url = "https://www.mangapark.net"
         self.site_domain = "https://www.mangapark.net"
 
@@ -39,7 +49,7 @@ class MangaPark_Source(Manga_Source):
         self.genres = dictionary["Genre(s)"] 
         self.cover_location = dictionary["Cover Location"]
         for s in dictionary["Manga Stream(s)"]:
-            stream = Manga_Stream()
+            stream = Stream()
             stream.from_dict( s )
             self.streams.append( stream )
         
@@ -96,7 +106,7 @@ class MangaPark_Source(Manga_Source):
                     stream_name = self.streams[stream_id].name.replace(' ', '_')
                     c.download_chapter( save_location +'/'+self.directory+'/'+ stream_name)
                 return
-    def Download_Manga_Chapter(self, stream_id, chapter_number, location="",keep=False):
+    def Download_Manga_Chapter(self, stream_id, chapter_number, location=""):
         save_location = self.save_location
         if location != "":
             save_location == location
@@ -104,13 +114,6 @@ class MangaPark_Source(Manga_Source):
             if s.id == stream_id:
                 for k in s.chapters.keys():
                     if  s.chapters[k].get_chapter_number() == chapter_number:
-                        if keep == True:
-                            if self.keep.get(s.name) == False:
-                                self.keep[s.name] = []
-                                self.keep[s.name].append(chapter_number)
-                            else:
-                                if self.keep[s.name].count(chapter_number) == 0:
-                                    self.keep[s.name].append(chapter_number)
                         #title = self.Title.replace(" ", '_')
                         stream = self.get_stream_with_id(stream_id)
                         stream_name = stream.name.replace(' ', '_')
@@ -172,7 +175,7 @@ class MangaPark_Source(Manga_Source):
             stream_id = int(stream_id_str[-1])
             version_tag = "ml-1 stream-text-" + str(stream_id)
             version_name = s.find('span', class_=version_tag).text
-            manga_stream = Manga_Stream(version_name, stream_id)
+            manga_stream = Stream(version_name, stream_id)
             chapters = s.find_all('a', class_="ml-1 visited ch")
             for c in chapters:
                 

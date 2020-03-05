@@ -1,13 +1,23 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-from manga_stream import Manga_Stream
+#===============================================================================#
+#title           :Source.py                                                     #
+#description     :contains the source class                                     #
+#author          :August B. Sandoval (asandova)                                 #
+#date            :2020-3-2                                                      #
+#version         :0.1                                                           #
+#usage           :defineds the source class                                     #
+#notes           :                                                              #
+#python_version  :3.6.9                                                         #
+#===============================================================================#
+from .Stream import Stream
 
 import json, platform, requests
 from bs4 import BeautifulSoup
 
 platform_type = platform.system()
 
-class Manga_Source:
+class TitleSource:
 
     hide_cache_file = False
 
@@ -17,7 +27,7 @@ class Manga_Source:
         self.site_url = ""
         self.site_domain = ""
         self.manga_extention = ""
-        self.save_location = Manga_Source.default_save_location
+        self.save_location = TitleSource.default_save_location
         self.Title = ""
         self.directory = self.Title.replace(' ', '_')
         if self.directory != "":
@@ -96,8 +106,18 @@ class Manga_Source:
     def get_directory(self):
         return self.directory
 
-    def get_title(self):
-        return self.Title
+    def get_title(self, group=0):
+        if group > 0:
+            s = self.Title.split(" ")
+            temp = s[0]
+            for i in range(1, len(s)):
+                if i % group == 0 and i != 0:
+                    temp += "\n" + s[i]
+                else:
+                    temp += " " + s[i]
+            return temp
+        else:
+            return self.Title
     
     def get_summary(self):
         return self.summary
@@ -109,11 +129,16 @@ class Manga_Source:
         return False
     def get_Authors(self):
         return self.authors
-    def get_Authors_str(self):
+    def get_Authors_str(self, group=0):
         authors_str = ""
-        for i in range (0 ,len( self.authors)) :
-            authors_str += self.authors[i]
-            if i+1 != len(self.authors):
+        num_of_authors = len(self.authors)
+        
+        for i in range (0 ,num_of_authors):
+            if group > 0:
+                if i % group == 0 and i > 0 and i != num_of_authors:
+                    authors_str += '\n\t'
+            authors_str += self.genres[i]
+            if i+1 != num_of_authors:
                 authors_str += ', '
         return authors_str
 
@@ -124,12 +149,18 @@ class Manga_Source:
         return False
     def get_Artists(self):
         return self.artists
-    def get_Artists_str(self):
+    def get_Artists_str(self, group=0):
         artists_str = ""
-        for i in range (0 ,len( self.artists)) :
-            artists_str += self.artists[i]
-            if i+1 != len(self.artists):
+        num_of_artists = len(self.artists)
+
+        for i in range (0 ,num_of_artists):
+            if group > 0:
+                if i % group == 0 and i > 0 and i != num_of_artists:
+                    artists_str += '\n\t'
+            artists_str += self.genres[i]
+            if i+1 != num_of_artists:
                 artists_str += ', '
+
         return artists_str
 
     def has_Genre(self, genre):
@@ -137,14 +168,21 @@ class Manga_Source:
             if g == genre:
                 return True
         return False
+
     def get_Genres(self):
         return self.genres
-    def get_Genres_str(self):
+
+    def get_Genres_str(self, group=0):
         Genres_str = ""
-        for i in range (0 ,len( self.genres)) :
+        num_of_genres = len(self.genres)
+        for i in range (0 , num_of_genres):
+            if group > 0:
+                if i % group == 0 and i > 0 and i != num_of_genres:
+                    Genres_str += '\n\t'
             Genres_str += self.genres[i]
-            if i+1 != len(self.genres):
+            if i+1 != num_of_genres:
                 Genres_str += ', '
+ 
         return Genres_str
 
     def get_cover_location(self):
@@ -172,7 +210,7 @@ class Manga_Source:
         return None
 
     def add_stream(self, stream):
-        if isinstance(stream, Manga_Stream):
+        if isinstance(stream, Stream):
             print("adding stream " + stream.name)
             self.streams.append(stream)
         else:
@@ -224,7 +262,7 @@ class Manga_Source:
 
     @staticmethod
     def set_default_save_location( location):
-        Manga_Source.default_save_location = location
+        TitleSource.default_save_location = location
 
     def to_dict(self):
         dic = {}
@@ -250,7 +288,7 @@ class Manga_Source:
         self.cover_location = dictionary["Cover Location"]
         self.keep = dictionary["Keep"]
         for s in dictionary["Manga Stream(s)"]:
-            stream = Manga_Stream()
+            stream = TitleSource()
             stream.from_dict( s )
             self.streams.append( stream )
 
@@ -259,11 +297,12 @@ class Manga_Source:
         print(self.directory)
         manga_dict = self.to_dict()
         filename = self.directory
-        if Manga_Source.hide_cache_file == True:
+        if TitleSource.hide_cache_file == True:
             if platform_type == "Windows":
                 filename = "$"+self.Title
             else:
                 filename = "."+self.Title
+                
         with open(save_location +"/" + self.directory +'/' +filename+ ".json", 'w') as f:
             f.write(json.dumps( manga_dict, indent=1 ))
             f.close()

@@ -1,0 +1,513 @@
+<?xml version='1.0' encoding='utf-8'?>
+<interface>
+  <object class="ttk.Frame" id="MainWindow">
+    <property name="width">800</property>
+    <layout>
+      <property name="column">0</property>
+      <property name="propagate">True</property>
+      <property name="row">0</property>
+      <property name="sticky">nsew</property>
+      <rows>
+        <row id="0">
+          <property name="weight">1</property>
+        </row>
+        <row id="1">
+          <property name="weight">0</property>
+        </row>
+      </rows>
+      <columns>
+        <column id="0">
+          <property name="weight">1</property>
+        </column>
+      </columns>
+    </layout>
+    <child>
+      <object class="ttk.Panedwindow" id="ContentPane">
+        <property name="height">200</property>
+        <property name="orient">horizontal</property>
+        <property name="width">800</property>
+        <layout>
+          <property name="column">0</property>
+          <property name="propagate">True</property>
+          <property name="row">0</property>
+          <property name="sticky">nsew</property>
+        </layout>
+        <child>
+          <object class="ttk.Panedwindow.Pane" id="TitlePane">
+            <property name="weight">1</property>
+            <child>
+              <object class="ttk.Frame" id="Titleframe">
+                <property name="height">200</property>
+                <property name="width">200</property>
+                <layout>
+                  <property name="column">0</property>
+                  <property name="propagate">True</property>
+                  <property name="row">0</property>
+                  <property name="sticky">nsew</property>
+                  <rows>
+                    <row id="0">
+                      <property name="weight">0</property>
+                    </row>
+                  </rows>
+                  <columns>
+                    <column id="0">
+                      <property name="weight">1</property>
+                    </column>
+                  </columns>
+                </layout>
+                <child>
+                  <object class="ttk.Frame" id="SearchFrame">
+                    <property name="cursor">bottom_tee</property>
+                    <property name="height">200</property>
+                    <property name="takefocus">true</property>
+                    <property name="width">200</property>
+                    <layout>
+                      <property name="column">0</property>
+                      <property name="propagate">True</property>
+                      <property name="row">0</property>
+                      <property name="sticky">new</property>
+                      <columns>
+                        <column id="1">
+                          <property name="weight">1</property>
+                        </column>
+                      </columns>
+                    </layout>
+                    <child>
+                      <object class="ttk.Label" id="SearchLabel">
+                        <property name="compound">bottom</property>
+                        <property name="text" translatable="yes">Search</property>
+                        <layout>
+                          <property name="column">0</property>
+                          <property name="propagate">True</property>
+                          <property name="row">0</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="ttk.Entry" id="SearchEntry">
+                        <layout>
+                          <property name="column">1</property>
+                          <property name="propagate">True</property>
+                          <property name="row">0</property>
+                          <property name="sticky">new</property>
+                        </layout>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Panedwindow.Pane" id="InfoPane">
+            <property name="weight">4</property>
+            <child>
+              <object class="ttk.Labelframe" id="InfoFrameLabel">
+                <property name="height">200</property>
+                <property name="labelanchor">n</property>
+                <property name="padding">2</property>
+                <property name="relief">sunken</property>
+                <property name="text" translatable="yes">Manga Park</property>
+                <property name="width">200</property>
+                <layout>
+                  <property name="column">0</property>
+                  <property name="propagate">True</property>
+                  <property name="row">0</property>
+                  <property name="sticky">nsew</property>
+                  <rows>
+                    <row id="0">
+                      <property name="weight">1</property>
+                    </row>
+                  </rows>
+                  <columns>
+                    <column id="0">
+                      <property name="weight">1</property>
+                    </column>
+                  </columns>
+                </layout>
+                <child>
+                  <object class="pygubu.builder.widgets.scrolledframe" id="ScrollFrame">
+                    <property name="scrolltype">both</property>
+                    <property name="usemousewheel">true</property>
+                    <layout>
+                      <property name="column">0</property>
+                      <property name="propagate">True</property>
+                      <property name="row">0</property>
+                      <property name="sticky">nsew</property>
+                      <rows>
+                        <row id="0">
+                          <property name="weight">1</property>
+                        </row>
+                      </rows>
+                      <columns>
+                        <column id="0">
+                          <property name="weight">1</property>
+                        </column>
+                      </columns>
+                    </layout>
+                    <child>
+                      <object class="ttk.Frame" id="InfoFrame">
+                        <property name="height">200</property>
+                        <property name="width">200</property>
+                        <layout>
+                          <property name="column">0</property>
+                          <property name="propagate">True</property>
+                          <property name="row">0</property>
+                          <property name="sticky">nsew</property>
+                          <columns>
+                            <column id="1">
+                              <property name="weight">1</property>
+                            </column>
+                          </columns>
+                        </layout>
+                        <child>
+                          <object class="tk.Canvas" id="Cover">
+                            <property name="relief">sunken</property>
+                            <property name="width">200</property>
+                            <layout>
+                              <property name="column">0</property>
+                              <property name="padx">2</property>
+                              <property name="pady">2</property>
+                              <property name="propagate">True</property>
+                              <property name="row">0</property>
+                              <property name="rowspan">6</property>
+                              <property name="sticky">nw</property>
+                            </layout>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="ttk.Label" id="TitleLabel">
+                            <property name="font">{Arial} 16 {bold}</property>
+                            <property name="relief">raised</property>
+                            <property name="text" translatable="yes">Title</property>
+                            <layout>
+                              <property name="column">1</property>
+                              <property name="columnspan">4</property>
+                              <property name="pady">2</property>
+                              <property name="propagate">True</property>
+                              <property name="row">0</property>
+                              <property name="rowspan">2</property>
+                              <property name="sticky">nsew</property>
+                            </layout>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="ttk.Label" id="AuthorLabel">
+                            <property name="font">{Arial} 12 {}</property>
+                            <property name="relief">ridge</property>
+                            <property name="text" translatable="yes">Author(s)</property>
+                            <layout>
+                              <property name="column">1</property>
+                              <property name="columnspan">4</property>
+                              <property name="pady">1</property>
+                              <property name="propagate">True</property>
+                              <property name="row">2</property>
+                              <property name="sticky">ew</property>
+                            </layout>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="ttk.Label" id="ArtistLabel">
+                            <property name="font">{Arial} 12 {}</property>
+                            <property name="relief">ridge</property>
+                            <property name="text" translatable="yes">Artist(s)</property>
+                            <layout>
+                              <property name="column">1</property>
+                              <property name="columnspan">4</property>
+                              <property name="pady">1</property>
+                              <property name="propagate">True</property>
+                              <property name="row">3</property>
+                              <property name="sticky">ew</property>
+                            </layout>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="ttk.Label" id="GenreLabel">
+                            <property name="cursor">arrow</property>
+                            <property name="font">{Arial} 12 {}</property>
+                            <property name="relief">ridge</property>
+                            <property name="text" translatable="yes">Genre(s)</property>
+                            <layout>
+                              <property name="column">1</property>
+                              <property name="columnspan">4</property>
+                              <property name="pady">1</property>
+                              <property name="propagate">True</property>
+                              <property name="row">4</property>
+                              <property name="sticky">ew</property>
+                            </layout>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="ttk.Labelframe" id="SummaryFrame">
+                            <property name="height">200</property>
+                            <property name="labelanchor">n</property>
+                            <property name="relief">groove</property>
+                            <property name="text" translatable="yes">Summary</property>
+                            <property name="width">200</property>
+                            <layout>
+                              <property name="column">1</property>
+                              <property name="columnspan">4</property>
+                              <property name="propagate">True</property>
+                              <property name="row">5</property>
+                              <property name="sticky">nsew</property>
+                              <rows>
+                                <row id="0">
+                                  <property name="weight">1</property>
+                                </row>
+                              </rows>
+                              <columns>
+                                <column id="0">
+                                  <property name="weight">1</property>
+                                </column>
+                              </columns>
+                            </layout>
+                            <child>
+                              <object class="tk.Text" id="SummaryText">
+                                <property name="font">{Arial} 11 {}</property>
+                                <property name="height">10</property>
+                                <property name="width">20</property>
+                                <property name="wrap">word</property>
+                                <layout>
+                                  <property name="column">0</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">0</property>
+                                  <property name="sticky">nsew</property>
+                                </layout>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="ttk.Frame" id="Spacer">
+                            <property name="height">10</property>
+                            <layout>
+                              <property name="column">0</property>
+                              <property name="columnspan">5</property>
+                              <property name="propagate">True</property>
+                              <property name="row">7</property>
+                              <property name="sticky">ew</property>
+                            </layout>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="ttk.Combobox" id="StreamSelect">
+                            <layout>
+                              <property name="column">0</property>
+                              <property name="propagate">True</property>
+                              <property name="row">6</property>
+                            </layout>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="ttk.Button" id="RemoveButton">
+                            <property name="command">_on_Remove</property>
+                            <property name="text" translatable="yes">Remove Title</property>
+                            <property name="underline">0</property>
+                            <layout>
+                              <property name="column">2</property>
+                              <property name="propagate">True</property>
+                              <property name="row">6</property>
+                            </layout>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="ttk.Button" id="UpdateButton">
+                            <property name="command">_on_Update</property>
+                            <property name="text" translatable="yes">Update</property>
+                            <property name="width">6</property>
+                            <layout>
+                              <property name="column">3</property>
+                              <property name="propagate">True</property>
+                              <property name="row">6</property>
+                            </layout>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="ttk.Button" id="SortButton">
+                            <property name="command">_on_sort</property>
+                            <property name="text" translatable="yes">Sort</property>
+                            <property name="width">4</property>
+                            <layout>
+                              <property name="column">4</property>
+                              <property name="propagate">True</property>
+                              <property name="row">6</property>
+                            </layout>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Frame" id="StatusFrame">
+        <property name="cursor">based_arrow_up</property>
+        <property name="padding">2</property>
+        <property name="relief">sunken</property>
+        <layout>
+          <property name="column">0</property>
+          <property name="propagate">True</property>
+          <property name="row">1</property>
+          <property name="sticky">sew</property>
+          <columns>
+            <column id="1">
+              <property name="weight">1</property>
+            </column>
+          </columns>
+        </layout>
+        <child>
+          <object class="ttk.Label" id="StatusLabel">
+            <property name="text" translatable="yes">Status</property>
+            <property name="textvariable">string:self.Info["Status"]</property>
+            <layout>
+              <property name="column">0</property>
+              <property name="propagate">True</property>
+              <property name="row">0</property>
+              <property name="sticky">sew</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Sizegrip" id="Sizegrip_1">
+            <layout>
+              <property name="column">1</property>
+              <property name="propagate">True</property>
+              <property name="row">0</property>
+              <property name="sticky">se</property>
+            </layout>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="tk.Menu" id="Menu">
+    <child>
+      <object class="tk.Menuitem.Submenu" id="FileMenuButton">
+        <property name="label" translatable="yes">File</property>
+        <property name="underline">0</property>
+        <child>
+          <object class="tk.Menuitem.Command" id="AddMangaCommand">
+            <property name="command">on_menu_add</property>
+            <property name="command_id_arg">false</property>
+            <property name="label" translatable="yes">Add Manga (URL)</property>
+            <property name="underline">0</property>
+          </object>
+        </child>
+        <child>
+          <object class="tk.Menuitem.Separator" id="Separator_1" />
+        </child>
+        <child>
+          <object class="tk.Menuitem.Command" id="QuitCommand">
+            <property name="command">on_quit</property>
+            <property name="command_id_arg">false</property>
+            <property name="label" translatable="yes">Quit</property>
+            <property name="underline">0</property>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="tk.Menuitem.Submenu" id="HelpMenuButton">
+        <property name="label" translatable="yes">Help</property>
+        <property name="underline">0</property>
+        <child>
+          <object class="tk.Menuitem.Command" id="AboutCommand">
+            <property name="command">about</property>
+            <property name="command_id_arg">false</property>
+            <property name="label" translatable="yes">About</property>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="tk.Toplevel" id="Add_Manga_Dialog">
+    <property name="height">100</property>
+    <property name="minsize">100|100</property>
+    <property name="resizable">horizontally</property>
+    <property name="title" translatable="yes">Add Manga</property>
+    <property name="width">100</property>
+    <child>
+      <object class="ttk.Labelframe" id="MainFrame">
+        <property name="height">200</property>
+        <property name="text" translatable="yes">Enter URL</property>
+        <property name="width">200</property>
+        <layout>
+          <property name="column">0</property>
+          <property name="propagate">True</property>
+          <property name="row">0</property>
+          <property name="sticky">nsew</property>
+          <rows>
+            <row id="0">
+              <property name="weight">1</property>
+            </row>
+            <row id="1">
+              <property name="weight">0</property>
+            </row>
+          </rows>
+          <columns>
+            <column id="0">
+              <property name="weight">1</property>
+            </column>
+          </columns>
+        </layout>
+        <child>
+          <object class="ttk.Entry" id="URLEntry">
+            <property name="text" translatable="yes">URL</property>
+            <layout>
+              <property name="column">0</property>
+              <property name="columnspan">3</property>
+              <property name="pady">2</property>
+              <property name="propagate">True</property>
+              <property name="row">0</property>
+              <property name="sticky">ew</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Frame" id="Frame_1">
+            <property name="height">20</property>
+            <property name="width">200</property>
+            <layout>
+              <property name="column">0</property>
+              <property name="propagate">True</property>
+              <property name="row">1</property>
+              <property name="sticky">nsew</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Button" id="AcceptButton">
+            <property name="text" translatable="yes">OK</property>
+            <layout>
+              <property name="column">1</property>
+              <property name="padx">2</property>
+              <property name="pady">2</property>
+              <property name="propagate">True</property>
+              <property name="row">1</property>
+              <property name="sticky">e</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Button" id="CencelButton">
+            <property name="text" translatable="yes">Cancel</property>
+            <layout>
+              <property name="column">2</property>
+              <property name="padx">2</property>
+              <property name="pady">2</property>
+              <property name="propagate">True</property>
+              <property name="row">1</property>
+              <property name="sticky">e</property>
+            </layout>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>

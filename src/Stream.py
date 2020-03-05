@@ -1,8 +1,18 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-from manga_chapter import Chapter
+#===============================================================================#
+#title           :Stream.py                                                     #
+#description     :contains the Stream class                                     #
+#author          :August B. Sandoval (asandova)                                 #
+#date            :2020-3-2                                                      #
+#version         :0.1                                                           #
+#usage           :defineds the Stream class                                     #
+#notes           :                                                              #
+#python_version  :3.6.9                                                         #
+#===============================================================================#
+from .Chapter import Chapter
 
-class Manga_Stream:
+class Stream:
     def __init__(self, name="", id=-1):
         self.name = name
         self.directory = name.replace(' ', '_')
