@@ -210,7 +210,7 @@ class TitleSource:
         return None
 
     def add_stream(self, stream):
-        if isinstance(stream, TitleSource):
+        if isinstance(stream, Stream):
             print("adding stream " + stream.name)
             self.streams.append(stream)
         else:

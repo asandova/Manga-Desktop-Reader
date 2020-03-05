@@ -23,6 +23,7 @@ except:
     from tkinter import font
     from tkinter.ttk import *
 
+import os
 
 class ChapterRow(Frame):
     def __init__(self, title, stream, chapter, master=None,removecommand=None, downloadcommand=None,viewcommand=None,**kw):
@@ -86,7 +87,7 @@ class ChapterRow(Frame):
         """
         #print("remove button pressed")
         if self.removecommand != None:
-            pass
+            self.removecommand(self)
         #self.removecommand(self.__ChapterNumber)
 
     def update_state(self,button,active=False):

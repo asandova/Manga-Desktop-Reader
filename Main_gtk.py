@@ -190,16 +190,6 @@ class Main_Window(gtk.Window):
     def _on_menu_about(self,widget):
         self.About = About_Popup(self)
 
-    def _on_chapter_keep(self, widget, state, manga, stream_id, chapter):
-        print("toggled keep to " + str(state))
-        pass
-    def _on_chapter_download(self, widget, manga, stream_id, chapter):
-        print("Download " + str(chapter))
-        pass
-    def _on_chapter_delete(self, widget, manga, stream_id, chapter):
-        print("Delete " + str(chapter))
-        pass
-
     def _on_chapter_select(self,widget,data=None):
         print(data)
         if data != None:
@@ -217,7 +207,6 @@ class Main_Window(gtk.Window):
                 return 2 # no stream selected
         else:
             return 3 # no manga Title selected
-
 
 class Main():
     def __init__(self, UI_Main_Template, Viewer_Window_Glade, Add_Dialog_Glade):

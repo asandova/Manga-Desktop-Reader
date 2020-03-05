@@ -51,9 +51,10 @@ class Main_Window(Tk):
 
         self.style = Style()
         try:
-            self.style.theme_use("winnative")
-        except:
             self.style.theme_use("clam")
+        except:
+            self.style.theme_use("winnative")
+            
         self.selection = {
             "Title"     : None,
             "Stream"    : None,
@@ -313,8 +314,12 @@ class Main_Window(Tk):
         else:
             Viewer(self.selection["Title"], self.selection["Stream"], self.selection["Chapter"])
 
-    def __on_remove_chapter(self, number):
-        pass
+    def __on_remove_chapter(self, chapter_row):
+        chapter_row.update_state("download", True)
+        chapter_row.update_state("view", False)
+        chapter_row.update_state("remove", False)
+        if os.path.isfile(chapter_row.chapter_path+'/'+chapter_row.chapter.directory+ '.zip') == True:
+            os.remove(chapter_row.chapter_path+"/"+chapter_row.chapter.directory+".zip")
 
     def _on_stream_change(self, event):
         #print("Stream change")
@@ -357,7 +362,8 @@ class Main_Window(Tk):
                                     stream=self.selection["Stream"],
                                     chapter=chapters[i],
                                     viewcommand=self.__on_view,
-                                    downloadcommand=self.__download_chapter
+                                    downloadcommand=self.__download_chapter,
+                                    removecommand=self.__on_remove_chapter
                 )
                 row.grid(row=8+i, column=0, columnspan=5, sticky=E+W)
                 row["relief"] = "groove"
