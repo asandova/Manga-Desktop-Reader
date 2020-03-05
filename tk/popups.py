@@ -78,7 +78,7 @@ class about_dialog(Toplevel):
             "Copyright" : StringVar(),
             "License" : StringVar()
         }
-        self.info["version"].set("Version 0.1b1")
+        self.info["version"].set("Version 0.2b")
         self.info["Notice"].set("NOTICE:\nAll Manga/Comics viewed within this application\nbelong to their respective owner(s).")
         self.info["Name"].set("Manga Reader")
         self.info["Copyright"].set("Copyright (c) 2020 August B. Sandoval")
