@@ -57,8 +57,7 @@ class Viewer(Toplevel):
             self.Chapter_Title = StringVar()
             self.Chapter_Subtitle = StringVar()
             self.pageZoom.set( str(int( self.zoom_percentage*10)) + "%" )
-            self.Chapter_Title.set(title.get_title())
-            self.Chapter_Subtitle.set("Chapter " + str(chapter.get_chapter_number()) +": " + chapter.get_chapter_name())
+
             
             if UI_Tamplate != None:
                 self.__Load_from_template(UI_Tamplate)
@@ -84,12 +83,16 @@ class Viewer(Toplevel):
         """
         self.builder = pygubu.Builder()
         self.builder.add_from_file(template + ".ui")
+        self.Chapter_Title = self.builder.tkvariables["Title"]
+        self.Chapter_Subtitle = self.builder.tkvariables["Subtitle"]
+        self.Chapter_Title.set(self.title.get_title())
+        self.Chapter_Subtitle.set("Chapter " + str(self.chapter.get_chapter_number()) +": " + self.chapter.get_chapter_name())
 
         self.__Nextbutton = self.builder.get_object("NextButton")
         self.__PreviousButton = self.builder.get_object("PrevButton")
-        self.__MainLabel = self.builder.get_object("Title")
-        self.__MainLabel["textvariable"] = self.Chapter_Title
-        self.__SubLabel = self.builder.get_object("Subtitle")
+        #self.__MainLabel = self.builder.get_object("Title")
+        self.__MainLabel.config(textvariable=self.Chapter_Title)
+        #self.__SubLabel = self.builder.get_object("Subtitle")
         self.__SubLabel["textvariable"] = self.Chapter_Subtitle
         self.__ExitButton = self.builder.get_object("ExitButton")
 
@@ -108,8 +111,10 @@ class Viewer(Toplevel):
         self.__ControlFrame["relief"] = "raised"
         self.__StatusFrame = Frame(master=self)
         self.__StatusFrame["relief"] = "sunken"
-        self.Chapter_Title = self.title.get_title()
-        self.Chapter_Subtitle = "Chapter " + str(self.chapter.get_chapter_number()) +": " + self.chapter.get_chapter_name()
+        self.Chapter_Title = StringVar()
+        self.Chapter_Subtitle = StringVar()
+        self.Chapter_Title.set(self.title.get_title())
+        self.Chapter_Subtitle.set("Chapter " + str(self.chapter.get_chapter_number()) +": " + self.chapter.get_chapter_name())
 
         self.__Nextbutton = Button(     master=self.__ControlFrame, width=6, text="Next", command=self.__on_next)
         self.__PreviousButton = Button( master=self.__ControlFrame, width=6, text="Prev",command=self.__on_previous)

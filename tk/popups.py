@@ -23,19 +23,29 @@ except:
     from tk.ScrollableFrame import ScrollableFrame
 
 class add_Window(Toplevel):
+    Verdana_Normal_12 = ("verdana", 12, "normal")
     def __init__(self, master=None,OKCommand=None, CancelCommand=None,**kw):
         Toplevel.__init__(self, master=master, **kw)
         self.transient(master)
-        self.title("Add title")
+        self.title("Add Title")
         self.result = None
         self.minsize(200,80)
+        self.geometry("250x95+%d+%d" % (
+                master.winfo_rootx() + (master.winfo_width()/2 - 125) ,
+                master.winfo_rooty() + (master.winfo_height()/2 - 80)
+            )
+        )
         self.AcceptCommand = OKCommand
         self.CancelCommand = CancelCommand
         self.Value = StringVar()
-        self.__Frame = LabelFrame(master=self, text="Enter URL")
+        
+        self.__Frame = LabelFrame(master=self )
+        self.__FrameLabel = Label(master= self.__Frame, text="Enter URL to title page")
+        self.__FrameLabel["font"] = add_Window.Verdana_Normal_12
+        self.__Frame["labelwidget"] = self.__FrameLabel
         self.__Entry = Entry(master=self.__Frame, textvariable = self.Value)
-        self.__Accept = Button(master=self.__Frame, command=self.Accept, text="OK")
-        self.__Cancel = Button(master=self.__Frame, command=self.Cancel, text="Cancel")
+        self.__Accept = Button(master=self.__Frame, command=self.Accept, text="OK",width=3)
+        self.__Cancel = Button(master=self.__Frame, command=self.Cancel, text="Cancel", width=6)
 
         self.__Frame.pack(fill=BOTH,expand=1, pady=2, padx=2)
         self.__Entry.grid(row=0, column=0, columnspan=3, sticky=E+W)

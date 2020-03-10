@@ -12,16 +12,16 @@
 #===============================================================================#
 
 try:
-    from tkinter import  Button, Frame,Label,StringVar, Grid
+    from tkinter import  Button, Frame, Label, StringVar, Grid
     from tkinter import LEFT, RIGHT, DISABLED, NORMAL, E, W, X
     from tkinter import font
-    from tkinter.ttk import *
+    from tkinter.ttk import Button, Frame, Label
 
 except:
-    from tkinter import  Button, Frame,Label,StringVar, Grid
+    from tkinter import  Button, Frame, Label, StringVar, Grid
     from tkinter import LEFT, RIGHT, DISABLED, NORMAL, E, W, X
     from tkinter import font
-    from tkinter.ttk import *
+    from tkinter.ttk import Button, Frame, Label
 
 import os
 

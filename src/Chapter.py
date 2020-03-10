@@ -77,8 +77,11 @@ class Chapter:
     def get_directory(self):
         return self.directory
 
-    def download_chapter(self, save_location):
+    def download_chapter(self, save_location, killDownload=[False]):
 
+        if killDownload[0] == True:
+            return 4
+        
         try:
             #display = Display(visible=0, size=(800,600))
             #display.start()
@@ -106,44 +109,45 @@ class Chapter:
                 print("Begining Download of Chapter " + str( self.chapter_number) )
                 save_path = save_location+'/'+self.get_full_title() + "/"
                 for p in pages:
-                    self.number_of_Pages += 1
-                    #print(p.prettify())
-                    url = p.img['src']
-                    num = p.img["i"]
-                    img = requests.get(url)
-                    url_elements = url.split('.')
-                    filename =page_name + num +'.'+ url_elements[-1]
-                    if(img.ok == False):
-                        print("Image URL responded with error:" + str(img.status_code))
+                    if killDownload[0] == True:
+                        if os.path.isdir(save_path):
+                            shutil.rmtree(save_path)
+                        print("Download of chapter_"+ str(self.chapter_number)+ ": cancelled")
                         browser.quit()
-                        return 2
-                    if num == -1:
-                        browser.quit()
-                        return 3
-                    #print(save_path+filename)
-                    if os.path.isdir(save_path) == False:
-                        os.makedirs(save_path)
-                    with open(save_path+filename, 'wb') as f:
-                        f.write(img.content)
-                        f.close()
-                    #print(url_elements)
-                    if url_elements[-1] == "webp":
-                        #print("converting")
-                        jpeg_name = page_name + num +'.jpeg'
-                        Chapter.__convert_webp_to_jpeg( infile=save_path+filename, outfile=save_path+jpeg_name )
-                        os.remove(save_path+filename)
-                        self.pages[int(num)] = jpeg_name
+                        return 4
                     else:
-                        self.pages[int(num)] = filename
+                        self.number_of_Pages += 1
+                        #print(p.prettify())
+                        url = p.img['src']
+                        num = p.img["i"]
+                        img = requests.get(url)
+                        url_elements = url.split('.')
+                        filename =page_name + num +'.'+ url_elements[-1]
+                        if(img.ok == False):
+                            print("Image URL responded with error:" + str(img.status_code))
+                            browser.quit()
+                            return 2
+                        if num == -1:
+                            browser.quit()
+                            return 3
+                        if os.path.isdir(save_path) == False:
+                            os.makedirs(save_path)
+                        with open(save_path+filename, 'wb') as f:
+                            f.write(img.content)
+                            f.close()
+                        if url_elements[-1] == "webp":
+                            jpeg_name = page_name + num +'.jpeg'
+                            Chapter.__convert_webp_to_jpeg( infile=save_path+filename, outfile=save_path+jpeg_name )
+                            os.remove(save_path+filename)
+                            self.pages[int(num)] = jpeg_name
+                        else:
+                            self.pages[int(num)] = filename
                 save_path = save_location+'/'
                 zip_name = self.get_full_title() +".zip"
-                #print(save_path+zip_name)
                 zip_file = ZipFile( save_path+zip_name ,'w')
                 with zip_file:
                     pages = os.listdir(save_path+self.directory+'/')
-                    #print(pages)
                     for p in pages:
-                        #print(p)
                         if p != zip_name:
                             zip_file.write( save_path+self.directory+'/' + p, p ) 
                             os.remove(save_path+self.directory+'/' +p)
@@ -152,14 +156,12 @@ class Chapter:
                 print("Download of chapter_"+ str(self.chapter_number)+ ": complete")
                 browser.quit()
                 return 0
-            #display.quit()
         except Exception as e:
             traceback.print_exc(file=sys.stdout)
             print("Error occured: " + str(e))
             return -1
     @staticmethod
     def __convert_webp_to_jpeg(infile,outfile):
-        #print(f"infile: {infile},\noutfile: {outfile}" )
         try:
             Image.open(infile).save(outfile)
         except IOError:

@@ -78,6 +78,7 @@
         <child>
           <object class="ttk.Label" id="Title">
             <property name="text" translatable="yes">Label_1</property>
+            <property name="textvariable">string:Title</property>
             <layout>
               <property name="column">1</property>
               <property name="propagate">True</property>

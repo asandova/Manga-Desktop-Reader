@@ -106,7 +106,8 @@ class MangaPark_Source(TitleSource):
                     stream_name = self.streams[stream_id].name.replace(' ', '_')
                     c.download_chapter( save_location +'/'+self.directory+'/'+ stream_name)
                 return
-    def Download_Manga_Chapter(self, stream_id, chapter_number, location=""):
+
+    def Download_Manga_Chapter(self, stream_id, chapter_number, location="", KillDownload=[False]):
         save_location = self.save_location
         if location != "":
             save_location == location
@@ -117,15 +118,14 @@ class MangaPark_Source(TitleSource):
                         #title = self.Title.replace(" ", '_')
                         stream = self.get_stream_with_id(stream_id)
                         stream_name = stream.name.replace(' ', '_')
-                        code =  s.chapters[k].download_chapter(save_location +'/'+self.directory+'/'+ stream_name)
+                        code =  s.chapters[k].download_chapter(save_location +'/'+self.directory+'/'+ stream_name,KillDownload)
                         return code
                 return -1
         return -2
 
     def _extract_cover(self):
         cover_data = self.site_html.find('div', class_="w-100 cover")
-        
-        #title = self.Title.replace(' ','_')
+
         if os.path.exists(self.save_location+'/'+self.directory) == False:
             os.mkdir(self.save_location+'/'+self.directory)
         cover_image_link = cover_data.img["src"]
