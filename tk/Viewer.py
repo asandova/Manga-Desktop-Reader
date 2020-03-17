@@ -11,11 +11,11 @@
 #python_version  :3.6.9                                                         #
 #===============================================================================#
 try:
-    from tkinter import Toplevel, Label, Button, Grid, N, W, E, S, StringVar, Canvas, TOP
-    from tkinter.ttk import *
+    from tkinter import Toplevel, Label, Button, Frame, Grid, N, W, E, S, StringVar, Canvas, TOP
+    from tkinter.ttk import Label, Button, Frame
 except:
-    from tkinter import Toplevel, Label, Button, Grid, N, W, E, S, StringVar, Canvas, TOP
-    from Tkinter.ttk import *
+    from Tkinter import Toplevel, Label, Button, Frame, Grid, N, W, E, S, StringVar, Canvas, TOP
+    from Tkinter.ttk import Label, Button, Frame
 
 try:
     from ScrollableFrame import ScrollableFrame

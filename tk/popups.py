@@ -11,11 +11,11 @@
 #python_version  :3.6.9                                                         #
 #===============================================================================#
 try:
-    from tkinter import Tk, Toplevel, Label, Button, Frame, Canvas, Grid, X,Y,E,W,N,S, BOTH,TOP, StringVar, Text, END
-    from tkinter.ttk import *
+    from tkinter import Tk, Toplevel, Label, Button, Frame, LabelFrame, Entry, Canvas, Grid, X,Y,E,W,N,S, BOTH,TOP, StringVar, Text, END
+    from tkinter.ttk import Style, Label, Button, Frame, LabelFrame
 except:
-    from Tkinter import Tk, Toplevel, Label, Button, Frame, Canvas, Grid, X,Y,E,W,N,S, BOTH,TOP, StringVar, Text,END
-    from Tkinter.ttk import *
+    from Tkinter import Tk, Toplevel, Label, Button, Frame, LabelFrame, Entry, Canvas, Grid, X,Y,E,W,N,S, BOTH,TOP, StringVar, Text,END
+    from Tkinter.ttk import Style, Label, Button, Frame, LabelFrame
 
 try:
     from ScrollableFrame import ScrollableFrame
@@ -29,8 +29,8 @@ class add_Window(Toplevel):
         self.transient(master)
         self.title("Add Title")
         self.result = None
-        self.minsize(200,80)
-        self.geometry("250x95+%d+%d" % (
+        self.minsize(300,100)
+        self.geometry("345x120+%d+%d" % (
                 master.winfo_rootx() + (master.winfo_width()/2 - 125) ,
                 master.winfo_rooty() + (master.winfo_height()/2 - 80)
             )
@@ -40,7 +40,7 @@ class add_Window(Toplevel):
         self.Value = StringVar()
         
         self.__Frame = LabelFrame(master=self )
-        self.__FrameLabel = Label(master= self.__Frame, text="Enter URL to title page")
+        self.__FrameLabel = Label(master= self.__Frame, text="Enter URL to title page\nSeparate mulitple URLs with comma (\",\")")
         self.__FrameLabel["font"] = add_Window.Verdana_Normal_12
         self.__Frame["labelwidget"] = self.__FrameLabel
         self.__Entry = Entry(master=self.__Frame, textvariable = self.Value)
@@ -56,7 +56,7 @@ class add_Window(Toplevel):
 
     def Accept(self):
         #print("Accept button pressed")
-        print( "\"" + self.Value.get()+ "\"")
+        #print( "\"" + self.Value.get()+ "\"")
         if self.AcceptCommand != None:
             self.AcceptCommand(self.Value.get())
         self.destroy()

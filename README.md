@@ -36,13 +36,13 @@ To run the application on Linux download the zip file containing the Linux execu
 To run the application on Windows download the zip file containing the windows executable.
 
 ### Configure
-This application uses a json configurtion file called config.json
+This application uses a json configurtion file called [config.json](config.json)
 
 #### Webdriver
 The WebDriver is how Selenium creates a headless webbrowser for extracting the HTML elements needed that are only generate when in a browser. This Application uses these drivers for generating the title's chapter pages so thay can be extracted. 
 This webdriver must support the version of a web browser already installed on your system (e.g. Google Chome, Firefox).
 
-**Note** - currently only drivers for Google Chrome have been tested.
+**Note** - currently only drivers for Google Chrome and Firefox are supported.
 Additional drivers can be found [here](https://selenium.dev/downloads/)
 
 In the config file there are four properies need to tell the application which web driver to use and how to place interface elements.

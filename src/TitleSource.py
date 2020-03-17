@@ -61,6 +61,7 @@ class TitleSource:
             #print("Extracting Manga from " + url)
             self.site_html = BeautifulSoup( r.text, 'lxml' )
             self.site_url = url
+            
             #print("Extraction complete")
             return 0
     
@@ -264,7 +265,7 @@ class TitleSource:
                 filename = "."+self.Title
                 
         with open(save_location +"/" + self.directory +'/' +filename+ ".json", 'w') as f:
-            f.write(json.dumps( manga_dict, indent=1 ))
+            f.write(json.dumps( manga_dict, indent=1, separators=(","," : ") ))
             f.close()
         print(save_location +"/" + self.directory +'/' +filename + ".json : has been written to")
 

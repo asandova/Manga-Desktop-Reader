@@ -19,10 +19,150 @@ from .GUI_Popups import Error_Popup, Warning_Popup, Info_Popup
 from zipfile import ZipFile
 import re, os, shutil, threading, sys
 
+
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk as gtk, GObject
+from gi.repository import GdkPixbuf
+
 class ChapterListBoxRow(gtk.ListBoxRow):
-    """A GTK ListboxRow child
+
+    def __init__(self, parent, title, stream, chapter, downloadCommand=None,removeCommand=None,viewCommand=None,*args, **kwargs):
+        gtk.ListBox.__init__(self, *args, **kwargs)
+        self.downloadCommand = downloadCommand
+        self.removeCommand = removeCommand
+        self.viewCommand = viewCommand
+        self.parent = parent
+        self.chapter_path = title.save_location + "/" + title.get_directory() +'/'+ stream.get_directory()
+        self.title = title
+        self.stream = stream
+        self.chapter = chapter
+        self.RowWidgets = {}
+        self.downloaded = False
+        self.chapter_number = chapter.get_chapter_number()
+        self.RowWidgets["Row Box"] = gtk.Box(spacing=2)
+        self.RowWidgets["Row Box"].fill = True
+        self.RowWidgets["Row Box"].hexpand = True
+        self.RowWidgets["Row Box"].halign = gtk.Align.FILL
+
+        self.RowWidgets["Label"] = gtk.Label(str(self.chapter)) 
+        self.RowWidgets["Label"].hexpand = True
+        self.RowWidgets["Label"].set_justify(gtk.Justification.LEFT)
+        self.RowWidgets["Label"].set_xalign(0.0)
+        self.RowWidgets["Label"].set_line_wrap_mode(0)
+
+        self.RowWidgets["Button Box"] = gtk.ButtonBox(spacing=2)
+        self.RowWidgets["Button Box"].fill = True
+
+        self.RowWidgets["Spinner"] = gtk.Spinner()
+        self.RowWidgets["Download Button"] = gtk.Button()
+        self.RowWidgets["Remove Button"] = gtk.Button()
+        self.RowWidgets["View Button"] = gtk.Button("View")
+        
+
+        if self.chapter.is_downloaded(self.chapter_path) == True:
+            self.update_state("remove", "Remove","Remove chapter " + str(self.chapter_number) + " from local storage?", active=True )
+            self.update_state("download", "Downloaded", str(self.chapter)+ " is already downloaded")
+            self.update_state("view", "View", "View " + str(self.chapter), True) 
+            self.set_is_downloaded(True)
+        else:
+            self.update_state("remove", "Remove","Chapter " + str(self.chapter_number) + " is not downloaded" )
+            self.update_state("download", "Download", "Download " + str(self.chapter), active=True)
+            self.update_state("view", "View", "Download " + str(self.chapter) + " before viewing")
+
+        if parent._current_task["Chapter"] != None:
+            if parent._current_task["Chapter"][4] == hash(self):
+                self.update_state("remove", "Remove","Chapter " + str(self.chapter_number) + " is not downloaded" )
+                self.update_state("download", "Downloading...", str(self.chapter)+ " is downloading")
+                self.update_state("view", "View", "Download " + str(self.chapter) + " before viewing", False, True)
+            elif parent.in_chapter_queue( hash(self) ) == True:
+                    self.update_state("remove", "Remove","Chapter " + str(self.chapter_number) + " is not downloaded" )
+                    self.update_state("download", "pending...", str(self.chapter)+ " is waiting to be download")
+                    self.update_state("view", "View", "Download " + str(self.chapter) + " before viewing", False, False)
+
+        self.add(self.RowWidgets["Row Box"])
+        self.RowWidgets["Row Box"].pack_start( self.RowWidgets["Label"],1,0,2)
+        self.RowWidgets["Row Box"].pack_end( self.RowWidgets["Button Box"] ,0,0,2)
+        self.RowWidgets["Button Box"].pack_end(self.RowWidgets["Spinner"],0,0,2)
+        self.RowWidgets["Button Box"].pack_end(self.RowWidgets["View Button"],0,0,2)
+        self.RowWidgets["Button Box"].pack_end(self.RowWidgets["Download Button"],0,0,2)
+        self.RowWidgets["Button Box"].pack_end(self.RowWidgets["Remove Button"],0,0,2)
+        self.RowWidgets["View Button"].connect("clicked", self._on_view)
+        self.RowWidgets["Download Button"].connect("clicked",self._on_download )
+        self.RowWidgets["Remove Button"].connect("clicked",self._on_remove )
+
+        self.RowWidgets["Row Box"].show()
+        self.RowWidgets["Button Box"].show()
+        self.RowWidgets["Label"].show()
+        self.RowWidgets["Spinner"].show()
+        self.RowWidgets["View Button"].show()
+        self.RowWidgets["Download Button"].show()
+        self.RowWidgets["Remove Button"].show()
+        self.show()
+
+    def __hash__(self):
+        return hash( (self.title, self.stream, self.chapter) )
+
+    def is_downloaded(self):
+        return self.downloaded
+
+    def set_is_downloaded(self, is_downloaded=False):
+        self.downloaded = is_downloaded
+
+    def update_state(self,button, text=None, tooltip=None, active=False, downloading=False):
+
+        if downloading == True:
+            self.RowWidgets["Spinner"].start()
+        else:
+            self.RowWidgets["Spinner"].stop()
+
+        #print(button)
+        #print(f"text: {text}")
+        if button == "remove":
+            #print("changing remove button")
+            if text != None:
+                self.RowWidgets["Remove Button"].set_label(text)
+                self.RowWidgets["Remove Button"].set_tooltip_text(tooltip)
+            self.RowWidgets["Remove Button"].set_sensitive(active)
+
+        elif button == "download":
+            #print("changing download button")
+            if text != None:
+                self.RowWidgets["Download Button"].set_label(text)
+                self.RowWidgets["Download Button"].set_tooltip_text(tooltip)
+            self.RowWidgets["Download Button"].set_sensitive(active)
+        elif button == "view":
+            #print("changing view button")
+            if text != None:
+                self.RowWidgets["View Button"].set_label(text)
+                self.RowWidgets["View Button"].set_tooltip_text(tooltip)
+            self.RowWidgets["View Button"].set_sensitive(active)
+
+    # Signal Handlers -----------------------------------------------------------------------#
+
+    def _on_view(self, widget):
+        """ Callback function for view button """
+        if self.viewCommand != None:
+            self.viewCommand(self.chapter_number, self.chapter_path)
+
+    def _on_download(self, widget):
+        """ Callback function for download button """
+        if self.downloadCommand != None:
+            self.update_state(button="download",text="pending...")
+            self.downloadCommand(self.title, self.stream, self.chapter, self.chapter_path)
+        
+    def _on_remove(self, widget):
+        """ Callback function for remove button """
+        print("Remove button pressed")
+        if self.removeCommand != None:
+            self.removeCommand(self)
+
+
+"""
+class ChapterListBoxRow(gtk.ListBoxRow):
+    ""A GTK ListboxRow child
        Creates a GTK ListBoxRow with the children being gtksplinner, label and three buttons for each instance
-    """
+    ""
     active = {}
 
     def __init__(self,parent_window,manga_object,stream_object,chapter_object,*args,**kwargs):
@@ -114,12 +254,12 @@ class ChapterListBoxRow(gtk.ListBoxRow):
         self.show()
 
     def __del__(self):
-        """ChapterListRowBox destructor"""
+        ""ChapterListRowBox destructor""
         ChapterListBoxRow.active[ self.id ]["Instance"] = None
 
     @staticmethod
     def is_thread_active(manga_key,stream_id,chapter_number):
-        """Checks if a thread assosiated with instance is active"""
+        ""Checks if a thread assosiated with instance is active""
 
         id = hash( (manga_key, stream_id,chapter_number) )
         if ChapterListBoxRow.active.get(id) != None:
@@ -132,7 +272,7 @@ class ChapterListBoxRow(gtk.ListBoxRow):
 
     @staticmethod
     def is_viewing(manga_key,stream_id,chapter_number):
-        """Checks if the chapter is already being viewed"""
+        ""Checks if the chapter is already being viewed""
         id = hash( (manga_key, stream_id,chapter_number) )
         if ChapterListBoxRow.active.get(id) != None:
             if ChapterListBoxRow.active[id]["Viewer"] == None:
@@ -142,22 +282,22 @@ class ChapterListBoxRow(gtk.ListBoxRow):
         else:
             return False
 
-    @staticmethod
-    def get_instance( manga,stream_id, chapter ):
-        """Gets this chapters ChapterListBoxRow instance from ChapterListBoxRow.active dictionary
-           if instance is not found return none otherwise return ChapterListBoxRow instance
-        """
-        id = hash( (manga, stream_id, chapter.get_chapter_number() ) )
-        if ChapterListBoxRow.active.get(id) != None:
-            return ChapterListBoxRow.active[id]["Instance"]
-        else:
-            return None
+    #@staticmethod
+    #def get_instance( manga,stream_id, chapter ):
+    #    Gets this chapters ChapterListBoxRow instance from ChapterListBoxRow.active dictionary
+    #       if instance is not found return none otherwise return ChapterListBoxRow instance
+    #    
+    #    id = hash( (manga, stream_id, chapter.get_chapter_number() ) )
+    #    if ChapterListBoxRow.active.get(id) != None:
+    #        return ChapterListBoxRow.active[id]["Instance"]
+    #    else:
+    #        return None
 
     @staticmethod
     def _update_spinner(manga, stream_id , chapter , turn_on=False):
-        """ Updates a particuler ChapterListBoxRow instance spinner.
+        "" Updates a particuler ChapterListBoxRow instance spinner.
             Assumes the ChapterListBoxInstance is still valid.
-        """
+        ""
         row = ChapterListBoxRow.get_instance(manga, stream_id,chapter)
         if row != None:
             if turn_on == True:
@@ -167,9 +307,9 @@ class ChapterListBoxRow(gtk.ListBoxRow):
 
     @staticmethod
     def _update_view_button(manga, stream_id, chapter, button_text, tooltip_text,sensitive):
-        """ Updates a particuler ChapterListBoxRow instance view button.
+        "" Updates a particuler ChapterListBoxRow instance view button.
             Assumes the ChapterListBoxInstance is still valid.
-        """
+        ""
         row = ChapterListBoxRow.get_instance(manga, stream_id, chapter  )
         if row != None:     
             row.RowWidgets["View Button"].set_label(button_text)
@@ -178,9 +318,9 @@ class ChapterListBoxRow(gtk.ListBoxRow):
 
     @staticmethod
     def _update_remove_button( manga, stream_id, chapter ,button_text, tooltip_text,sensitive):
-        """ Updates a particuler ChapterListBoxRow instance remove button.
+        "" Updates a particuler ChapterListBoxRow instance remove button.
             Assumes the ChapterListBoxInstance is still valid.
-        """
+        ""
         row = ChapterListBoxRow.get_instance(manga, stream_id, chapter  )
         if row != None:     
             row.RowWidgets["Remove Button"].set_label(button_text)
@@ -189,9 +329,9 @@ class ChapterListBoxRow(gtk.ListBoxRow):
 
     @staticmethod
     def _update_download_button(manga, stream_id, chapter ,button_text, tooltip_text,sensitive):
-        """ Updates a particuler ChapterListBoxRow instance download button.
+        "" Updates a particuler ChapterListBoxRow instance download button.
             Assumes the ChapterListBoxInstance is still valid.
-        """
+        ""
         row = ChapterListBoxRow.get_instance(manga, stream_id, chapter  )
         if row != None:
             row.RowWidgets["Download Button"].set_label(button_text)
@@ -200,7 +340,17 @@ class ChapterListBoxRow(gtk.ListBoxRow):
 
     @staticmethod
     def downloader_runner(manga,stream_id,chapter,location,parent):
-        """ Chapter download thread worker function """
+        # Chapter download thread worker function
+        while parent.ChapterQueue.empty() == False:
+            if parent._killThreads[0] == True:
+                return
+            
+            task = parent.ChapterQueue.get()
+
+            pass
+
+        data = (manga, stream_id, chapter, location, parent)
+
         row = ChapterListBoxRow.get_instance(manga, stream_id, chapter)
         id = hash(row)
         if row != None:
@@ -225,7 +375,7 @@ class ChapterListBoxRow(gtk.ListBoxRow):
         ChapterListBoxRow.active[id]["Thread"] = None
 
     def add_to_active(self):
-        """ add current instance to ChapterListBoxRow.active dictionary"""
+        #"" add current instance to ChapterListBoxRow.active dictionary""
         id = hash(self)
 
         if ChapterListBoxRow.active.get(id) != None:
@@ -244,21 +394,27 @@ class ChapterListBoxRow(gtk.ListBoxRow):
 
 
     def _on_Download_button(self, widget):
-        """ Callback function for download button """
+        #"" Callback function for download button ""
         #print( "_on_Download_button" )
         #id = hash(self)
         if self.downloaded == False:
-            self.downloaded = True
-            self.RowWidgets["Download Button"].set_label("Downloading..")
-            self.RowWidgets["Download Button"].set_tooltip_text("Chapter is Downloading")
-            self.RowWidgets["Download Button"].set_sensitive(False)
-            download_thread = threading.Thread(target=self.downloader_runner, args=(self.manga,self.stream_id,self.chapter,self.chapters_path,self.parent_window))
-            ChapterListBoxRow.active[ self.id ]["Thread"] = download_thread
-            download_thread.daemon = True
-            download_thread.start()
+            self.parent_window.ChapterQueue.put( (self.manga,self.stream_id,self.chapter,self.chapters_path,self.parent_window) )
+            if parent.ChapterQueue.empty() == True: 
+                self.downloaded = True
+                self.RowWidgets["Download Button"].set_label("Downloading..")
+                self.RowWidgets["Download Button"].set_tooltip_text("Chapter is Downloading")
+                self.RowWidgets["Download Button"].set_sensitive(False)
+                parent.threads["Chapter"] = threading.Thread(target=self.downloader_runner, args=(self.manga,self.stream_id,self.chapter,self.chapters_path,self.parent_window))
+                ChapterListBoxRow.active[ self.id ]["Thread"] = parent.threads["Chapter"]
+                download_thread.start()
+            else:
+                #parent.ChapterQueue.
+                self.RowWidgets["Download Button"].set_label("Pending...")
+                self.RowWidgets["Download Button"].set_tooltip_text("waiting to be downloaded")
+                self.RowWidgets["Download Button"].set_sensitive(False)
 
     def _on_view_button(self,widget):
-        """ Callback function for view button """
+        #"" Callback function for view button ""
         if self.chapter.is_downloaded(self.chapters_path) == True:
             if self.add_to_active() == 1:
                 if ChapterListBoxRow.active[self.id]["Viewer"] == None:
@@ -276,7 +432,7 @@ class ChapterListBoxRow(gtk.ListBoxRow):
             popup.destroy()
 
     def _on_Delete_Button(self, widget):
-        """ Callback function for delete button """
+        #""Callback function for delete button
         if self.downloaded == True:
             #print(self.chapters_path+'/'+self.chapter.directory+ '.zip')
             if os.path.isfile(self.chapters_path+'/'+self.chapter.directory+ '.zip') == True:
@@ -342,8 +498,10 @@ class ChapterListBoxRow(gtk.ListBoxRow):
                         return True
         return False
 
-#---------------------------------------------------------------------------------------------------------------------
+"""
 
+#---------------------------------------------------------------------------------------------------------------------
+"""
 class ViewerWindow(gtk.Window):
     
     def __init__(self, caller_widget ,glade_file,manga_object, stream_id, chapter_object,save_location='./', *args, **kwargs):
@@ -496,3 +654,4 @@ class ViewerWindow(gtk.Window):
         self.remove_pages()
         ChapterListBoxRow.delete_viewer(self.manga,self.stream_id,self.chapter)
         self.Widgets["Viewer Window"].destroy()
+"""

@@ -260,6 +260,7 @@ class MangaPark_Source(TitleSource):
             s += str(stream) + "\n"
         return s
 
+"""
 if __name__ == "__main__":
     
     #test = MangaPark_Source()
@@ -273,3 +274,4 @@ if __name__ == "__main__":
         f.write( json.dumps( test2.to_dict(),indent=1 ) ) 
 
     test2.Download_Manga_Chapter(stream_id=MangaPark_Source.Versions["Fox"],chapter_number=1 , location="./Manga")
+"""

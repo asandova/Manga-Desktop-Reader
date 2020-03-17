@@ -182,6 +182,7 @@ class Chapter:
     def is_downloaded(self,save_location="."):
         save_location += "/" + self.get_full_title() + '.zip'
         #print(save_location)
+        #print( os.path.isfile(save_location) )
         if os.path.isfile(save_location) == True:
             return True
         else:

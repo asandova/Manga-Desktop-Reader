@@ -11,7 +11,6 @@
 #python_version  :3.6.9                                                         #
 #===============================================================================#
 
-
 from tk.MainWindow import MainWindow
 
 import json, os, platform
@@ -51,6 +50,6 @@ if __name__ == "__main__":
     elif platform.system() == "Linux":
         Chapter.Driver_path += "_Linux"
     TitleSource.set_default_save_location(MainWindow.appConfig["Default Download Location"])
-    main = MainWindow( UI_Template=MainWindow.appConfig["UI"]["Main"] )
+    main = MainWindow( UI_Template=MainWindow.appConfig["UI"]["Main"], title="Manga Reader" )
 
     main.mainloop()
