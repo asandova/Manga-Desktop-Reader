@@ -1,3 +1,16 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+#===============================================================================#
+#title           :Viewer.py                                                     #
+#description     :contains a Viewer class a custom GTK Window                   #
+#author          :August B. Sandoval (asandova)                                 #
+#date            :2020-3-18                                                     #
+#version         :0.3                                                           #
+#usage           :defineds a custom GTK Window widget                           #
+#notes           :                                                              #
+#python_version  :3.6.9                                                         #
+#===============================================================================#
+
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk as gtk, GObject
@@ -5,7 +18,6 @@ from gi.repository import GdkPixbuf
 from .GUI_Popups import Error_Popup, Warning_Popup, Info_Popup
 from zipfile import ZipFile
 import re, os, shutil, threading, sys
-
 
 class Viewer(gtk.Window):
     
@@ -27,7 +39,7 @@ class Viewer(gtk.Window):
             self.manga = manga_object
             self.save_location = save_location
             self.page_image = {}
-            self.zoom_percentage = 5
+            self.zoom_percentage = 10
             self.zoom_step = 1
             self.base_width = 1500
             self.base_height = 1200
@@ -137,6 +149,10 @@ class Viewer(gtk.Window):
             self.update_page(self.current_page_number)
             self.Widgets["Back"].set_sensitive(True)
 
+    def _on_scroll(self, widget, data):
+        print( "scroll event detected" )
+        pass
+
     def _on_zoom_decrease(self, widget):
 
         if self.zoom_percentage == 1:
@@ -147,7 +163,7 @@ class Viewer(gtk.Window):
 
     def _on_zoom_increase(self,widget):
 
-        if self.zoom_percentage < 10:
+        if self.zoom_percentage < 20:
             self.zoom_percentage += self.zoom_step
             self._scale() 
 

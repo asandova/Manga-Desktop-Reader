@@ -4,8 +4,8 @@
 #title           :Viewer.py                                                     #
 #description     :contains the definition for a custom toplevel widget          #
 #author          :August B. Sandoval (asandova)                                 #
-#date            :2020-3-2                                                      #
-#version         :0.1                                                           #
+#date            :2020-3-18                                                     #
+#version         :0.3                                                           #
 #usage           :defines the viewer toplevel widget                            #
 #notes           :                                                              #
 #python_version  :3.6.9                                                         #
@@ -46,7 +46,7 @@ class Viewer(Toplevel):
             self.stream = stream
             self.save_location =  title.save_location + "/" + title.get_directory() +'/'+ stream.get_directory()
             self.page_image = {}
-            self.zoom_percentage = 5
+            self.zoom_percentage = 10
             self.zoom_step = 1
             self.base_width = 1500
             self.base_height = 1200
@@ -57,7 +57,6 @@ class Viewer(Toplevel):
             self.Chapter_Title = StringVar()
             self.Chapter_Subtitle = StringVar()
             self.pageZoom.set( str(int( self.zoom_percentage*10)) + "%" )
-
             
             if UI_Tamplate != None:
                 self.__Load_from_template(UI_Tamplate)
@@ -69,8 +68,10 @@ class Viewer(Toplevel):
             self.update_page(self.current_page_number)
 
             self.bind("<Right>", self.__on_next)
+            self.bind("<Next>", self.__on_next)
             self.bind("<Left>", self.__on_previous)
-            self.bind("+", self.__on_scale_increase)
+            self.bind("<Prior>", self.__on_previous)
+            self.bind("=", self.__on_scale_increase)
             self.bind("-", self.__on_scale_decrease)
             self.__PreviousButton["state"] = "disabled"
             Viewer.OpenViewers[hash(self)] = self
@@ -152,53 +153,8 @@ class Viewer(Toplevel):
         self.__PageCanvas = Canvas(master=self.__pageArea.get_attach_point(),width=self.width, height=self.height)
         self.__PageCanvas.pack(side=TOP)
 
-    @staticmethod
-    def get_instance(title, stream, chapter):
-        """Returns the viewer instance with the provided title, stream and chapter
-        
-        Arguments:
-            title {MangaPark object} -- Holds entire title infomation (e.g. title, authors, artists, etc)
-            stream {MangaStream object} -- Holds the chapter list for a partitular stream in a Title
-            chapter {Chapter object} -- Containts the chapters number, and page list
-        
-        Returns:
-            Viewer inststance or None -- The assosiated active viewer attached to a given title, stream and chapter
-        """
-        obj_hash = hash( (title, stream.get_id(), chapter.get_chapter_number()))
-        return Viewer.OpenViewers.get(obj_hash)
-
     def __hash__(self):
         return hash( (self.title, self.stream.get_id(), self.chapter.get_chapter_number() ) )
-
-    def __on_next(self, event=None):
-        """Signal catcher method for the next button
-        
-        Keyword Arguments:
-            event {tkinter event} -- not used, but to provides compatability for keyboard events binded to this method (default: {None})
-        """
-        #print("Next button pressed")
-        if self.current_page_number < self.number_of_pages:
-            self.current_page_number += 1
-            self.pageText.set( str(self.current_page_number) +"/"+str(self.number_of_pages))
-            self.update_page(self.current_page_number)
-            self.__PreviousButton["state"] = "normal"
-            if self.current_page_number == self.number_of_pages:
-                self.__Nextbutton["state"] = "disable"
-
-    def __on_previous(self, event=None):
-        """Signal catcher method for the Previous button
-        
-        Keyword Arguments:
-            event {tkinter event} -- not used, but to provides compatability for keyboard events binded to this method (default: {None})
-        """
-        #print("Previous button pressed")
-        if self.current_page_number > 1:
-            self.current_page_number -= 1
-            self.pageText.set( str(self.current_page_number) +"/"+str(self.number_of_pages))
-            self.update_page(self.current_page_number)
-            self.__Nextbutton["state"] = "normal"
-            if self.current_page_number == 1:
-                self.__PreviousButton["state"] = "disable"
 
     def extract_zip(self):
         #print("extracting..")
@@ -248,6 +204,55 @@ class Viewer(Toplevel):
                 self.__PageCanvas.create_image(swidth/2,sheight/2,anchor="c", image=render)
                 self.__PageCanvas.image = render
 
+    # Static Methods ------------------------------------------------------------------------#
+
+    @staticmethod
+    def get_instance(title, stream, chapter):
+        """Returns the viewer instance with the provided title, stream and chapter
+        
+        Arguments:
+            title {MangaPark object} -- Holds entire title infomation (e.g. title, authors, artists, etc)
+            stream {MangaStream object} -- Holds the chapter list for a partitular stream in a Title
+            chapter {Chapter object} -- Containts the chapters number, and page list
+        
+        Returns:
+            Viewer inststance or None -- The assosiated active viewer attached to a given title, stream and chapter
+        """
+        obj_hash = hash( (title, stream.get_id(), chapter.get_chapter_number()))
+        return Viewer.OpenViewers.get(obj_hash)
+
+    # Signal callback methods ---------------------------------------------------------------#
+
+    def __on_next(self, event=None):
+        """Signal catcher method for the next button
+        
+        Keyword Arguments:
+            event {tkinter event} -- not used, but to provides compatability for keyboard events binded to this method (default: {None})
+        """
+        #print("Next button pressed")
+        if self.current_page_number < self.number_of_pages:
+            self.current_page_number += 1
+            self.pageText.set( str(self.current_page_number) +"/"+str(self.number_of_pages))
+            self.update_page(self.current_page_number)
+            self.__PreviousButton["state"] = "normal"
+            if self.current_page_number == self.number_of_pages:
+                self.__Nextbutton["state"] = "disable"
+
+    def __on_previous(self, event=None):
+        """Signal catcher method for the Previous button
+        
+        Keyword Arguments:
+            event {tkinter event} -- not used, but to provides compatability for keyboard events binded to this method (default: {None})
+        """
+        #print("Previous button pressed")
+        if self.current_page_number > 1:
+            self.current_page_number -= 1
+            self.pageText.set( str(self.current_page_number) +"/"+str(self.number_of_pages))
+            self.update_page(self.current_page_number)
+            self.__Nextbutton["state"] = "normal"
+            if self.current_page_number == 1:
+                self.__PreviousButton["state"] = "disable"
+
     def __on_scale_decrease(self, event=None):
         """Signal catcher method for the minus button
         
@@ -266,7 +271,7 @@ class Viewer(Toplevel):
             event {tkinter event} -- not used, but to provides compatability for keyboard events binded to this method (default: {None})
         """
         #print("scale increase button pressed")
-        if self.zoom_percentage < 10:
+        if self.zoom_percentage < 20:
             self.zoom_percentage += 1
             self.__on_scale()
             

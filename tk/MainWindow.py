@@ -4,8 +4,8 @@
 #title           :MainWindow.py                                                 #
 #description     :Defines the MainWidow for tkinter.                            #
 #author          :August B. Sandoval (asandova)                                 #
-#date            :2020-3-2                                                      #
-#version         :0.1                                                           #
+#date            :2020-3-18                                                     #
+#version         :0.3                                                           #
 #usage           :defines a custom tkinter window                               #
 #notes           :                                                              #
 #python_version  :3.6.9                                                         #
@@ -119,7 +119,7 @@ class MainWindow(Tk, control):
         
         self.Widgets["InfoFrame"].grid_forget()
         self.Widgets["InfoLabelFrame"]["labelwidget"] = Label(textvariable=self.Info["Source Name"], font=self.Verdana_Bold_15)
-        
+
         self.Widgets["Title Label"]["textvariable"] = self.Info["Title"]
         self.Widgets["Title Label"]["font"] = self.Verdana_Bold_13
         self.Widgets["Title Label"]["relief"] = "raised"
@@ -382,7 +382,7 @@ class MainWindow(Tk, control):
         self.selection["Stream"] = self.selection["Title"].get_stream_with_name(
             self.Widgets["Stream Select"].get()
         )
-        self._update_chapter_list(0, 500)
+        self._update_chapter_list()
 
     def _on_view(self, number):
         self.selection["Chapter"] = self.selection["Stream"].get_chapter(number)

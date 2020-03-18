@@ -5,7 +5,7 @@
 #description     :contains the Stream class                                     #
 #author          :August B. Sandoval (asandova)                                 #
 #date            :2020-3-2                                                      #
-#version         :0.1                                                           #
+#version         :0.3                                                           #
 #usage           :defineds the Stream class                                     #
 #notes           :                                                              #
 #python_version  :3.6.9                                                         #

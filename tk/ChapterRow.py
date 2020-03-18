@@ -4,8 +4,8 @@
 #title           :ChapterRow.py                                                 #
 #description     :Defines a ChapterRow widget for tkinter                       #
 #author          :August B. Sandoval (asandova)                                 #
-#date            :2020-3-2                                                      #
-#version         :0.1                                                           #
+#date            :2020-3-18                                                     #
+#version         :0.3                                                           #
 #usage           :Defines a ChapterRow Widget for tkinter                       #
 #notes           :                                                              #
 #python_version  :3.6.9                                                         #
@@ -75,34 +75,8 @@ class ChapterRow(Frame):
                     self.update_state("download", "pending...")
                     self.update_state("view", "View")   
 
-
     def __hash__(self):
         return hash( (self.title, self.stream, self.chapter) )
-
-    def __on_view(self):
-        """Signal catcher for the view button
-        """
-        #print("view button pressed")
-        if self.viewcommand != None:
-            self.viewcommand(self.__ChapterNumber)
-
-    def __on_download(self):
-        """Singal catcher for the download button
-        """
-        #print("download button pressed")
-        if self.downloadcommand != None:
-            self.__downloadButton["state"] = DISABLED
-            if len(self.parentWindow.ChapterQueue) > 0 or self.parentWindow._current_task["Chapter"] != None:
-                self.update_state("download", "pending...", False)
-            self.downloadcommand(self.title, self.stream, self.chapter, self.chapter_path)
-
-    def __on_remove(self):
-        """Signal catcher for the remove button
-        """
-        #print("remove button pressed")
-        if self.removecommand != None:
-            self.removecommand(self)
-        #self.removecommand(self.__ChapterNumber)
 
     def update_state(self,button,text=None,active=False):
         """Updates the state and label text of the three main button
@@ -171,3 +145,30 @@ class ChapterRow(Frame):
         self.__downloadButton.pack(side=RIGHT)
         self.__removeButton.pack(side=RIGHT)
         Frame.pack(self, kwargs)
+
+    # Signal callback methods ---------------------------------------------------------------#
+   
+    def __on_view(self):
+        """Signal catcher for the view button
+        """
+        #print("view button pressed")
+        if self.viewcommand != None:
+            self.viewcommand(self.__ChapterNumber)
+
+    def __on_download(self):
+        """Singal catcher for the download button
+        """
+        #print("download button pressed")
+        if self.downloadcommand != None:
+            self.__downloadButton["state"] = DISABLED
+            if len(self.parentWindow.ChapterQueue) > 0 or self.parentWindow._current_task["Chapter"] != None:
+                self.update_state("download", "pending...", False)
+            self.downloadcommand(self.title, self.stream, self.chapter, self.chapter_path)
+
+    def __on_remove(self):
+        """Signal catcher for the remove button
+        """
+        #print("remove button pressed")
+        if self.removecommand != None:
+            self.removecommand(self)
+        #self.removecommand(self.__ChapterNumber)

@@ -4,8 +4,8 @@
 #title           :Main_tkinter.py                                               #
 #description     :The Main driver script for tkinter interface for this project.#
 #author          :August B. Sandoval (asandova)                                 #
-#date            :2020-3-2                                                      #
-#version         :0.1                                                           #
+#date            :22020-3-18                                                     #
+#version         :0.3                                                           #
 #usage           :Main python script for Manga Desktop Reader using TKinter     #
 #notes           :                                                              #
 #python_version  :3.6.9                                                         #

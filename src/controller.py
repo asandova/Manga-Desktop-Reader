@@ -5,8 +5,8 @@
 #description     :Defines a abstract parent class for Mainwindows for tkinter   #
 #                :and GTK                                                       #
 #author          :August B. Sandoval (asandova)                                 #
-#date            :2020-3-2                                                      #
-#version         :0.1                                                           #
+#date            :2020-3-18                                                     #
+#version         :0.3                                                           #
 #usage           :defines a abstract parent class for functions and variables   #
 #                :used for both Main Windows tkinter and GTK                    #
 #notes           :                                                              #

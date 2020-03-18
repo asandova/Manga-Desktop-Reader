@@ -4,8 +4,8 @@
 #title           :Chapter.py                                                    #
 #description     :Contains a generic chapter object definition                  #
 #author          :August B. Sandoval (asandova)                                 #
-#date            :2020-3-2                                                      #
-#version         :0.1                                                           #
+#date            :2020-3-18                                                     #
+#version         :0.3                                                           #
 #usage           :Mdefins the chapter class                                     #
 #notes           :                                                              #
 #python_version  :3.6.9                                                         #
@@ -51,30 +51,70 @@ class Chapter:
         self.chapter_link = ""
 
     def set_chapter_number(self, num):
+        """Sets the chapter number
+        
+        Arguments:
+            num {int} -- chapter's number
+        """
         if type(num) == float or type(num) == int:
             self.chapter_number = num
     def get_chapter_number(self):
+        """returns the chapters number
+        
+        Returns:
+            int -- chapter's number
+        """
         return self.chapter_number
 
     def set_link(self,link):
+        """sets the chapter url link
+        
+        Arguments:
+            link {string} -- chapter's url link
+        """
         if type(link) == str:
             self.chapter_link = link
     def get_link(self):
+        """returns the chapter's url link
+        
+        Returns:
+            string -- chapter's url link
+        """
         return self.chapter_link
 
     def get_full_title(self):
+        """returns the chapter's full title (e.g. Chapter [number] - [title])
+        
+        Returns:
+            string -- chapter's full title
+        """
         full = "Chapter_" + str(self.chapter_number)
         if self.chapter_number == "":
             full += ":_"+ self.chapter_name.replace(' ', '_')
         return full
 
     def set_chapter_name(self, name):
+        """sets the chapter's name
+        
+        Arguments:
+            name {string} -- name of chapter
+        """
         if type(name) == str:
             self.chapter_name = name
     def get_chapter_name(self):
+        """returns the chapter's name
+        
+        Returns:
+            string -- chapter's name
+        """
         return self.chapter_name
 
     def get_directory(self):
+        """returns the chapter's save location
+        
+        Returns:
+            string -- chapter's save location
+        """
         return self.directory
 
     def download_chapter(self, save_location, killDownload=[False]):
@@ -160,6 +200,7 @@ class Chapter:
             traceback.print_exc(file=sys.stdout)
             print("Error occured: " + str(e))
             return -1
+
     @staticmethod
     def __convert_webp_to_jpeg(infile,outfile):
         try:

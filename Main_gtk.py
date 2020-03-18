@@ -4,8 +4,8 @@
 #title           :Main_gtk.py                                                   #
 #description     :contains the driver script                                    #
 #author          :August B. Sandoval (asandova)                                 #
-#date            :2020-3-2                                                      #
-#version         :0.1                                                           #
+#date            :2020-3-18                                                     #
+#version         :0.3                                                           #
 #usage           :the driver script using gtk3 GUI library                      #
 #notes           :                                                              #
 #python_version  :3.6.9                                                         #
