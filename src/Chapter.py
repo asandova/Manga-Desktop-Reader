@@ -4,8 +4,8 @@
 #title           :Chapter.py                                                    #
 #description     :Contains a generic chapter object definition                  #
 #author          :August B. Sandoval (asandova)                                 #
-#date            :2020-3-2                                                      #
-#version         :0.1                                                           #
+#date            :2020-3-18                                                     #
+#version         :0.3                                                           #
 #usage           :Mdefins the chapter class                                     #
 #notes           :                                                              #
 #python_version  :3.6.9                                                         #
@@ -51,34 +51,77 @@ class Chapter:
         self.chapter_link = ""
 
     def set_chapter_number(self, num):
+        """Sets the chapter number
+        
+        Arguments:
+            num {int} -- chapter's number
+        """
         if type(num) == float or type(num) == int:
             self.chapter_number = num
     def get_chapter_number(self):
+        """returns the chapters number
+        
+        Returns:
+            int -- chapter's number
+        """
         return self.chapter_number
 
     def set_link(self,link):
+        """sets the chapter url link
+        
+        Arguments:
+            link {string} -- chapter's url link
+        """
         if type(link) == str:
             self.chapter_link = link
     def get_link(self):
+        """returns the chapter's url link
+        
+        Returns:
+            string -- chapter's url link
+        """
         return self.chapter_link
 
     def get_full_title(self):
+        """returns the chapter's full title (e.g. Chapter [number] - [title])
+        
+        Returns:
+            string -- chapter's full title
+        """
         full = "Chapter_" + str(self.chapter_number)
         if self.chapter_number == "":
             full += ":_"+ self.chapter_name.replace(' ', '_')
         return full
 
     def set_chapter_name(self, name):
+        """sets the chapter's name
+        
+        Arguments:
+            name {string} -- name of chapter
+        """
         if type(name) == str:
             self.chapter_name = name
     def get_chapter_name(self):
+        """returns the chapter's name
+        
+        Returns:
+            string -- chapter's name
+        """
         return self.chapter_name
 
     def get_directory(self):
+        """returns the chapter's save location
+        
+        Returns:
+            string -- chapter's save location
+        """
         return self.directory
 
-    def download_chapter(self, save_location):
+    def download_chapter(self, save_location, killDownload=[False]):
 
+        if killDownload[0] == True:
+            return 4
+        
         try:
             #display = Display(visible=0, size=(800,600))
             #display.start()
@@ -106,44 +149,45 @@ class Chapter:
                 print("Begining Download of Chapter " + str( self.chapter_number) )
                 save_path = save_location+'/'+self.get_full_title() + "/"
                 for p in pages:
-                    self.number_of_Pages += 1
-                    #print(p.prettify())
-                    url = p.img['src']
-                    num = p.img["i"]
-                    img = requests.get(url)
-                    url_elements = url.split('.')
-                    filename =page_name + num +'.'+ url_elements[-1]
-                    if(img.ok == False):
-                        print("Image URL responded with error:" + str(img.status_code))
+                    if killDownload[0] == True:
+                        if os.path.isdir(save_path):
+                            shutil.rmtree(save_path)
+                        print("Download of chapter_"+ str(self.chapter_number)+ ": cancelled")
                         browser.quit()
-                        return 2
-                    if num == -1:
-                        browser.quit()
-                        return 3
-                    #print(save_path+filename)
-                    if os.path.isdir(save_path) == False:
-                        os.makedirs(save_path)
-                    with open(save_path+filename, 'wb') as f:
-                        f.write(img.content)
-                        f.close()
-                    #print(url_elements)
-                    if url_elements[-1] == "webp":
-                        #print("converting")
-                        jpeg_name = page_name + num +'.jpeg'
-                        Chapter.__convert_webp_to_jpeg( infile=save_path+filename, outfile=save_path+jpeg_name )
-                        os.remove(save_path+filename)
-                        self.pages[int(num)] = jpeg_name
+                        return 4
                     else:
-                        self.pages[int(num)] = filename
+                        self.number_of_Pages += 1
+                        #print(p.prettify())
+                        url = p.img['src']
+                        num = p.img["i"]
+                        img = requests.get(url)
+                        url_elements = url.split('.')
+                        filename =page_name + num +'.'+ url_elements[-1]
+                        if(img.ok == False):
+                            print("Image URL responded with error:" + str(img.status_code))
+                            browser.quit()
+                            return 2
+                        if num == -1:
+                            browser.quit()
+                            return 3
+                        if os.path.isdir(save_path) == False:
+                            os.makedirs(save_path)
+                        with open(save_path+filename, 'wb') as f:
+                            f.write(img.content)
+                            f.close()
+                        if url_elements[-1] == "webp":
+                            jpeg_name = page_name + num +'.jpeg'
+                            Chapter.__convert_webp_to_jpeg( infile=save_path+filename, outfile=save_path+jpeg_name )
+                            os.remove(save_path+filename)
+                            self.pages[int(num)] = jpeg_name
+                        else:
+                            self.pages[int(num)] = filename
                 save_path = save_location+'/'
                 zip_name = self.get_full_title() +".zip"
-                #print(save_path+zip_name)
                 zip_file = ZipFile( save_path+zip_name ,'w')
                 with zip_file:
                     pages = os.listdir(save_path+self.directory+'/')
-                    #print(pages)
                     for p in pages:
-                        #print(p)
                         if p != zip_name:
                             zip_file.write( save_path+self.directory+'/' + p, p ) 
                             os.remove(save_path+self.directory+'/' +p)
@@ -152,14 +196,13 @@ class Chapter:
                 print("Download of chapter_"+ str(self.chapter_number)+ ": complete")
                 browser.quit()
                 return 0
-            #display.quit()
         except Exception as e:
             traceback.print_exc(file=sys.stdout)
             print("Error occured: " + str(e))
             return -1
+
     @staticmethod
     def __convert_webp_to_jpeg(infile,outfile):
-        #print(f"infile: {infile},\noutfile: {outfile}" )
         try:
             Image.open(infile).save(outfile)
         except IOError:
@@ -180,6 +223,7 @@ class Chapter:
     def is_downloaded(self,save_location="."):
         save_location += "/" + self.get_full_title() + '.zip'
         #print(save_location)
+        #print( os.path.isfile(save_location) )
         if os.path.isfile(save_location) == True:
             return True
         else:

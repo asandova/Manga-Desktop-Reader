@@ -66,7 +66,8 @@
           <object class="GtkHeaderBar">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="title" translatable="yes">Add Manga</property>
+            <property name="title" translatable="yes">Add Title</property>
+            <property name="has_subtitle">False</property>
             <child>
               <object class="GtkButton">
                 <property name="label">gtk-close</property>
@@ -85,6 +86,23 @@
           </packing>
         </child>
         <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">Enter URL of the title page for the comic.
+Separate mulitple URLs with comma (",")</property>
+            <property name="justify">center</property>
+            <attributes>
+              <attribute name="font-desc" value="Verdana 13"/>
+            </attributes>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
           <object class="GtkEntry" id="URL_Entry">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
@@ -95,7 +113,7 @@
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">1</property>
+            <property name="position">3</property>
           </packing>
         </child>
       </object>

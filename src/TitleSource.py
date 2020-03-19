@@ -5,7 +5,7 @@
 #description     :contains the source class                                     #
 #author          :August B. Sandoval (asandova)                                 #
 #date            :2020-3-2                                                      #
-#version         :0.1                                                           #
+#version         :0.3                                                           #
 #usage           :defineds the source class                                     #
 #notes           :                                                              #
 #python_version  :3.6.9                                                         #
@@ -26,6 +26,7 @@ class TitleSource:
     def __init__(self):    
         self.site_url = ""
         self.site_domain = ""
+        self.site_name = ""
         self.manga_extention = ""
         self.save_location = TitleSource.default_save_location
         self.Title = ""
@@ -60,6 +61,7 @@ class TitleSource:
             #print("Extracting Manga from " + url)
             self.site_html = BeautifulSoup( r.text, 'lxml' )
             self.site_url = url
+            
             #print("Extraction complete")
             return 0
     
@@ -137,7 +139,7 @@ class TitleSource:
             if group > 0:
                 if i % group == 0 and i > 0 and i != num_of_authors:
                     authors_str += '\n\t'
-            authors_str += self.genres[i]
+            authors_str += self.authors[i]
             if i+1 != num_of_authors:
                 authors_str += ', '
         return authors_str
@@ -157,7 +159,7 @@ class TitleSource:
             if group > 0:
                 if i % group == 0 and i > 0 and i != num_of_artists:
                     artists_str += '\n\t'
-            artists_str += self.genres[i]
+            artists_str += self.artists[i]
             if i+1 != num_of_artists:
                 artists_str += ', '
 
@@ -219,47 +221,6 @@ class TitleSource:
     def download_stream(self, stream_name):
         pass
 
-    def is_keeped(self,stream_id, chapter):
-        stream = self.get_stream_with_id(stream_id)
-        if self.keep.get(stream.name) == None:
-            return False
-        else:
-            if self.keep[stream.name].count() == 0:
-                return False
-            else:
-                return True
-
-    def remove_from_keep(self,stream_id=None,chapter=None):
-        if stream_id == None and chapter == None:
-            self.keep = {}
-            return
-        
-        stream = self.get_stream_with_id(stream_id)
-        if chapter != None:
-            if self.keep.get(stream.name) != None:
-                for c in self.keep[stream.name]:
-                    if c == chapter.get_chapter_number():
-                        self.keep[stream.name].remove(c)
-        else:
-            if self.keep.get(stream.name) != None:
-                self.keep[stream.name] = []
-
-
-    def add_to_keep(self,stream_id,chapter=None):
-        stream = self.get_stream_with_id(stream_id)
-        if self.keep.get(stream.name) == None:
-            self.keep[stream.name] = []
-
-        if chapter == None:
-            chapters = stream.get_chapters()
-            for c in chapters:
-                chap_num = c.get_chapter_number()
-                if self.keep[stream.name].count(chap_num) == 0:
-                    self.keep[stream.name].append(chap_num)
-        else:
-            if self.keep[stream.name].count(chapter.get_chapter_number()) == 0:
-                self.keep[stream.name].append(chapter.get_chapter_number())
-
     @staticmethod
     def set_default_save_location( location):
         TitleSource.default_save_location = location
@@ -304,7 +265,7 @@ class TitleSource:
                 filename = "."+self.Title
                 
         with open(save_location +"/" + self.directory +'/' +filename+ ".json", 'w') as f:
-            f.write(json.dumps( manga_dict, indent=1 ))
+            f.write(json.dumps( manga_dict, indent=1, separators=(","," : ") ))
             f.close()
         print(save_location +"/" + self.directory +'/' +filename + ".json : has been written to")
 

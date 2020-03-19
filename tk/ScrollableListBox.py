@@ -4,8 +4,8 @@
 #title           :ScrollableListBox.py                                          #
 #description     :Defines a acrollable Listbox widget for tkinter               #
 #author          :August B. Sandoval (asandova)                                 #
-#date            :2020-3-2                                                      #
-#version         :0.1                                                           #
+#date            :2020-3-18                                                     #
+#version         :0.3                                                           #
 #usage           :Defines a acrollable Listbox widget                           #
 #notes           :                                                              #
 #python_version  :3.6.9                                                         #
@@ -18,6 +18,8 @@ except ImportError:
     from tkinter import Tk, Frame, Scrollbar, Listbox ,LEFT, RIGHT, TOP, BOTTOM, BOTH, N, E, S ,W, Grid, SINGLE, END
     from tkinter.ttk import *
     
+import platform
+
 class ScrollableListbox(Frame):
     def __init__(self, master, vscrollside="right", hscrollside="bottom", selectmode=SINGLE,command=None,*args, **kwargs):
         Frame.__init__(self, master=master, *args, **kwargs)
@@ -51,14 +53,26 @@ class ScrollableListbox(Frame):
             self.__HScrollPos[0] = 0
             self.__VScrollPos[0] = 1
 
-
     def insert(self, title):
+        """Inserts title into the listbox
+        
+        Arguments:
+            title {string} -- the string to be display into the list
+        """
         position = self.__find_insertion_point(title)
         if position == -1:
             position = END
         self.__ListBox.insert(position, title)
 
     def delete(self, title):
+        """Removes the title from from the listbox
+        
+        Arguments:
+            title {string} -- the title to be removed
+        
+        Returns:
+            bool -- returns 1 if title is not in list, else 0
+        """
         for i in range(0, len(self.__TitleList)):
             if self.__TitleList[i] == title:
                 self.__TitleList.remove(title)
@@ -67,10 +81,20 @@ class ScrollableListbox(Frame):
         return 1
         
     def remove_all(self):
+        """Removes all entries in the list
+        """
         self.__TitleList = []
         self.__ListBox.delete(0,self.__ListBox.size())
 
     def __find_insertion_point(self, text):
+        """Finds the current alphabetical placement of the title
+        
+        Arguments:
+            text {string} -- string being entered
+        
+        Returns:
+            int -- index the title should be placed, -1 is end of list
+        """
         l = self.__TitleList
         l.append(text)
         l.sort()
@@ -98,6 +122,19 @@ class ScrollableListbox(Frame):
         self.__VScroll.grid( row=self.__VScrollPos[0], column=self.__VScrollPos[1], sticky=N+S)    
         self.__HScroll.grid( row=self.__HScrollPos[0], column=self.__HScrollPos[1], sticky=E+W)
         self.__ListBox.grid( row=self.__listpos[0],    column=self.__listpos[1],    sticky=E+W+S+N)
+        
+        self.__ListBox.bind("<Enter>", self._on_enter)
+        self.__ListBox.bind("<Leave>", self._on_leave)
+
+        if platform.system() == "Windows":
+            self.__ListBox.bind("<MouseWheel>", self._on_mousewheel)
+            self.__ListBox.bind("<Shift-MouseWheel>", self._on_shift_mousewheel)
+        elif platform.system() == "Linux":
+            self.__ListBox.bind("<Button-4>",self._on_mousewheel)
+            self.__ListBox.bind("<Button-5>",self._on_mousewheel)
+            self.__ListBox.bind("<Shift-Button-4>",self._on_shift_mousewheel)
+            self.__ListBox.bind("<Shift-Button-5>",self._on_shift_mousewheel)
+        
         Frame.grid(self, **kwargs)
 
     def pack(self, **kwargs):
@@ -141,10 +178,91 @@ class ScrollableListbox(Frame):
             self.__HScroll.pack(side=LEFT, fill="x", expand=1)
             self.__Coner.pack(side=LEFT, fill="none", expand=0)
 
+        self.__ListBox.bind("<Enter>", self._on_enter)
+        self.__ListBox.bind("<Leave>", self._on_leave)
+
+        if platform.system() == "Windows":
+            self.__ListBox.bind("<MouseWheel>", self._on_mousewheel)
+            self.__ListBox.bind("<Shift-MouseWheel>", self._on_shift_mousewheel)
+        elif platform.system() == "Linux":
+            self.__ListBox.bind("<Button-4>",self._on_mousewheel)
+            self.__ListBox.bind("<Button-5>",self._on_mousewheel)
+            self.__ListBox.bind("<Shift-Button-4>",self._on_shift_mousewheel)
+            self.__ListBox.bind("<Shift-Button-5>",self._on_shift_mousewheel)        
+
         Frame.pack(self,**kwargs)
 
-    def _on_select(self, evt):
-        #print(self.__ListBox.curselection())
+    # Signal callback methods ---------------------------------------------------------------#
+
+    def _on_enter(self, event):
+        """Signal catcher of mouse enter event
+        
+        Arguments:
+            event {tkinter event} -- tkinter mouse enter event
+        """
+        if platform.system() == "Windows":
+            self.__ListBox.bind("<MouseWheel>", self._on_mousewheel)
+            self.__ListBox.bind("<Shift-MouseWheel>", self._on_shift_mousewheel)
+        elif platform.system() == "Linux":
+            self.__ListBox.bind("<Button-4>",self._on_mousewheel)
+            self.__ListBox.bind("<Button-5>",self._on_mousewheel)
+            self.__ListBox.bind("<Shift-Button-4>",self._on_shift_mousewheel)
+            self.__ListBox.bind("<Shift-Button-5>",self._on_shift_mousewheel)
+
+    def _on_leave(self,event):
+        """Signal catcher of mouse exit event
+        
+        Arguments:
+            event {tkinter event} -- tkinter mouse exit event
+        """
+        if platform.system() == "Windows":
+            self.unbind_all("<MouseWheel>")
+            self.unbind_all("<Shift-MouseWheel>")
+        elif platform.system() == "Linux":
+            self.unbind_all("<Button-4>")
+            self.unbind_all("<Button-5>")
+            self.unbind_all("<Shift-Button-4>")
+            self.unbind_all("<Shift-Button-5>")
+
+    def _on_mousewheel(self,event):
+        """Signal catcher for mousewheel event
+        
+        Arguments:
+            event {tkinter event} -- tkinter mousewheel event
+        """
+        delta = event.delta
+        if platform.system() == "Linux":
+            if event.num == 5:
+                delta = -1
+            elif event.num == 4:
+                delta = 1
+            self.__ListBox.yview_scroll( int(-1 * delta), "units" )
+        else:       
+            self.__ListBox.yview_scroll( int(-1 * (event.delta/120)), "units" )
+
+    def _on_shift_mousewheel(self,event):
+        """Signal catcher for shift mousewheel event
+        
+        Arguments:
+            event {tkinter event} -- tkinter shift mousewheel event
+        """
+        delta = event.delta
+        if platform.system() == "Linux":
+            if event.num == 5:
+                delta = -1
+            elif event.num == 4:
+                delta = 1
+            self.__ListBox.xview_scroll( int(-1 * delta), "units" )
+        else:       
+            self.__ListBox.xview_scroll( int(-1 * (event.delta/120)), "units" )
+
+
+    def _on_select(self, event):
+        """Signal catcher for listbox selection event
+        
+        Arguments:
+            event {tkinter event} -- tkinter listbox selection event
+        """
         if len(self.__ListBox.curselection()) > 0:
             index = int(self.__ListBox.curselection()[0])
             value = self.__ListBox.get(index)

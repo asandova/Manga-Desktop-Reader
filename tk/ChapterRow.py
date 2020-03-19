@@ -4,34 +4,35 @@
 #title           :ChapterRow.py                                                 #
 #description     :Defines a ChapterRow widget for tkinter                       #
 #author          :August B. Sandoval (asandova)                                 #
-#date            :2020-3-2                                                      #
-#version         :0.1                                                           #
+#date            :2020-3-18                                                     #
+#version         :0.3                                                           #
 #usage           :Defines a ChapterRow Widget for tkinter                       #
 #notes           :                                                              #
 #python_version  :3.6.9                                                         #
 #===============================================================================#
 
 try:
-    from tkinter import  Button, Frame,Label,StringVar, Grid
+    from tkinter import  Button, Frame, Label, StringVar, Grid
     from tkinter import LEFT, RIGHT, DISABLED, NORMAL, E, W, X
     from tkinter import font
-    from tkinter.ttk import *
+    from tkinter.ttk import Button, Frame, Label
 
 except:
-    from tkinter import  Button, Frame,Label,StringVar, Grid
+    from tkinter import  Button, Frame, Label, StringVar, Grid
     from tkinter import LEFT, RIGHT, DISABLED, NORMAL, E, W, X
     from tkinter import font
-    from tkinter.ttk import *
+    from tkinter.ttk import Button, Frame, Label
 
 import os
 
 class ChapterRow(Frame):
-    def __init__(self, title, stream, chapter, master=None,removecommand=None, downloadcommand=None,viewcommand=None,**kw):
+    def __init__(self, title, stream, chapter,masterWindow=None, master=None,removecommand=None, downloadcommand=None,viewcommand=None,**kw):
         Frame.__init__(self, master=master, **kw)
         self.removecommand = removecommand
         self.downloadcommand = downloadcommand
         self.viewcommand = viewcommand
         self.parent = master
+        self.parentWindow = masterWindow
         self.downloaded = False
         self.title = title
         self.stream=stream
@@ -64,52 +65,47 @@ class ChapterRow(Frame):
             self.__downloadButton["state"] = NORMAL
             self.__viewButton["state"] = DISABLED
 
+        if self.parentWindow._current_task["Chapter"] != None:
+            if self.parentWindow._current_task["Chapter"][4] == hash(self):
+                self.update_state("remove", "Remove" )
+                self.update_state("download", "Downloading...")
+                self.update_state("view", "View")
+            elif self.parentWindow.in_chapter_queue( hash(self) ) == True:
+                    self.update_state("remove", "Remove")
+                    self.update_state("download", "pending...")
+                    self.update_state("view", "View")   
+
     def __hash__(self):
         return hash( (self.title, self.stream, self.chapter) )
 
-    def __on_view(self):
-        """Signal catcher for the view button
-        """
-        #print("view button pressed")
-        if self.viewcommand != None:
-            self.viewcommand(self.__ChapterNumber)
-
-    def __on_download(self):
-        """Singal catcher for the download button
-        """
-        #print("download button pressed")
-        if self.downloadcommand != None:
-            self.__downloadButton["state"] = DISABLED
-            self.downloadcommand(self.title, self.stream, self.chapter, self.chapter_path)
-
-    def __on_remove(self):
-        """Signal catcher for the remove button
-        """
-        #print("remove button pressed")
-        if self.removecommand != None:
-            self.removecommand(self)
-        #self.removecommand(self.__ChapterNumber)
-
-    def update_state(self,button,active=False):
+    def update_state(self,button,text=None,active=False):
         """Updates the state and label text of the three main button
         
         Arguments:
             button {String} -- The name of the button to be changed
+            text {String or None} -- The text to be displayed on the button, if None current text remains unchanged
         
         Keyword Arguments:
             active {bool} -- The state to change the tkinter button to (default: {False})
         """
         if button == "remove":
+            if text != None:
+                self.Info["Remove"].set(text)
+
             if active:
                 self.__removeButton["state"] = NORMAL
             else:
                 self.__removeButton["state"] = DISABLED
         elif button == "download":
+            if text != None:
+                self.Info["Download"].set(text)
             if active:
                 self.__downloadButton["state"] = NORMAL
             else:
                 self.__downloadButton["state"] = DISABLED
         elif button == "view":
+            if text != None:
+                self.Info["View"].set(text)
             if active:
                 self.__viewButton["state"] = NORMAL
             else:
@@ -149,3 +145,30 @@ class ChapterRow(Frame):
         self.__downloadButton.pack(side=RIGHT)
         self.__removeButton.pack(side=RIGHT)
         Frame.pack(self, kwargs)
+
+    # Signal callback methods ---------------------------------------------------------------#
+   
+    def __on_view(self):
+        """Signal catcher for the view button
+        """
+        #print("view button pressed")
+        if self.viewcommand != None:
+            self.viewcommand(self.__ChapterNumber)
+
+    def __on_download(self):
+        """Singal catcher for the download button
+        """
+        #print("download button pressed")
+        if self.downloadcommand != None:
+            self.__downloadButton["state"] = DISABLED
+            if len(self.parentWindow.ChapterQueue) > 0 or self.parentWindow._current_task["Chapter"] != None:
+                self.update_state("download", "pending...", False)
+            self.downloadcommand(self.title, self.stream, self.chapter, self.chapter_path)
+
+    def __on_remove(self):
+        """Signal catcher for the remove button
+        """
+        #print("remove button pressed")
+        if self.removecommand != None:
+            self.removecommand(self)
+        #self.removecommand(self.__ChapterNumber)

@@ -1,5 +1,6 @@
 *.pyc
 __pycache__/
+.vscode/
 build/
 dist/
 *.glade~
@@ -11,5 +12,4 @@ Manga/
 *.tar.gz
 tracking_list.json
 .tracking_list.json
-$tracking_list.json
 Main.spec

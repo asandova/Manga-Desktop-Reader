@@ -5,17 +5,17 @@
 #description     :contains custom tkinter toplevel windows                      #
 #author          :August B. Sandoval (asandova)                                 #
 #date            :2020-3-2                                                      #
-#version         :0.1                                                           #
+#version         :0.3                                                           #
 #usage           :defines mulitple custom tkinter toplevel windows              #
 #notes           :                                                              #
 #python_version  :3.6.9                                                         #
 #===============================================================================#
 try:
-    from tkinter import Tk, Toplevel, Label, Button, Frame, Canvas, Grid, X,Y,E,W,N,S, BOTH,TOP, StringVar, Text, END
-    from tkinter.ttk import *
+    from tkinter import Tk, Toplevel, Label, Button, Frame, LabelFrame, Entry, Canvas, Grid, X,Y,E,W,N,S, BOTH,TOP, StringVar, Text, END
+    from tkinter.ttk import Style, Label, Button, Frame, LabelFrame
 except:
-    from Tkinter import Tk, Toplevel, Label, Button, Frame, Canvas, Grid, X,Y,E,W,N,S, BOTH,TOP, StringVar, Text,END
-    from Tkinter.ttk import *
+    from Tkinter import Tk, Toplevel, Label, Button, Frame, LabelFrame, Entry, Canvas, Grid, X,Y,E,W,N,S, BOTH,TOP, StringVar, Text,END
+    from Tkinter.ttk import Style, Label, Button, Frame, LabelFrame
 
 try:
     from ScrollableFrame import ScrollableFrame
@@ -23,19 +23,29 @@ except:
     from tk.ScrollableFrame import ScrollableFrame
 
 class add_Window(Toplevel):
+    Verdana_Normal_12 = ("verdana", 12, "normal")
     def __init__(self, master=None,OKCommand=None, CancelCommand=None,**kw):
         Toplevel.__init__(self, master=master, **kw)
         self.transient(master)
-        self.title("Add title")
+        self.title("Add Title")
         self.result = None
-        self.minsize(200,80)
+        self.minsize(300,100)
+        self.geometry("345x120+%d+%d" % (
+                master.winfo_rootx() + (master.winfo_width()/2 - 125) ,
+                master.winfo_rooty() + (master.winfo_height()/2 - 80)
+            )
+        )
         self.AcceptCommand = OKCommand
         self.CancelCommand = CancelCommand
         self.Value = StringVar()
-        self.__Frame = LabelFrame(master=self, text="Enter URL")
+        
+        self.__Frame = LabelFrame(master=self )
+        self.__FrameLabel = Label(master= self.__Frame, text="Enter URL to title page\nSeparate mulitple URLs with comma (\",\")")
+        self.__FrameLabel["font"] = add_Window.Verdana_Normal_12
+        self.__Frame["labelwidget"] = self.__FrameLabel
         self.__Entry = Entry(master=self.__Frame, textvariable = self.Value)
-        self.__Accept = Button(master=self.__Frame, command=self.Accept, text="OK")
-        self.__Cancel = Button(master=self.__Frame, command=self.Cancel, text="Cancel")
+        self.__Accept = Button(master=self.__Frame, command=self.Accept, text="OK",width=3)
+        self.__Cancel = Button(master=self.__Frame, command=self.Cancel, text="Cancel", width=6)
 
         self.__Frame.pack(fill=BOTH,expand=1, pady=2, padx=2)
         self.__Entry.grid(row=0, column=0, columnspan=3, sticky=E+W)
@@ -46,7 +56,7 @@ class add_Window(Toplevel):
 
     def Accept(self):
         #print("Accept button pressed")
-        print( "\"" + self.Value.get()+ "\"")
+        #print( "\"" + self.Value.get()+ "\"")
         if self.AcceptCommand != None:
             self.AcceptCommand(self.Value.get())
         self.destroy()
