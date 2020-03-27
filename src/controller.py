@@ -12,7 +12,6 @@
 #notes           :                                                              #
 #python_version  :3.6.9                                                         #
 #===============================================================================#
-from abc import ABC, abstractmethod
 import json, os, sys, platform
 from queue import Queue
 from collections import deque
@@ -21,7 +20,7 @@ try:
 except:
     from .MangaPark import MangaPark_Source
     
-class control(ABC):
+class control():
 
     appConfig = {}
 
@@ -55,18 +54,6 @@ class control(ABC):
         self.ChapterQueue = deque()
         self.TitleQueue = deque()
 
-    @staticmethod
-    def get_config():
-        return control.appConfig
-
-    @staticmethod
-    def set_config(key, value):
-        control.appConfig[key] = value
-
-    @staticmethod
-    def set_config_dict(json_dict):
-        control.appConfig =  json_dict
-
     def in_chapter_queue(self, hash_id):
         #if self._current_task["Chapter"] != None:
         #    title = self._current_task["Chapter"][0]
@@ -81,11 +68,9 @@ class control(ABC):
                 return True
         return False
 
-    @abstractmethod
     def add_title_entry(self, name):
         pass
 
-    @abstractmethod
     def update_status(self, message):
         pass
 
@@ -144,77 +129,78 @@ class control(ABC):
             f.write(json.dumps(dic, separators=(",", " : "), indent=4))
             f.close()
 
-    @abstractmethod
     def _load_title_entry(self):
         pass
 
-    @abstractmethod
+
+    def _update_location_bounds(self):
+        self.page_location["current"] = 0
+        self.page_location["end"] = int( len( self.selection["Stream"] ) / self.chapter_per_page )
+        
+        if len( self.selection["Stream"] ) % self.chapter_per_page != 0:
+            self.page_location["end"] += 1 
+
     def _update_title_details(self):
         pass
 
     # Signal callback methods ---------------------------------------------------------------#
     
-    @abstractmethod
-    def about(self):
+    def about(self, widget):
         pass
 
-    @abstractmethod
     def _on_beginning(self):
-        pass
+        self.page_location["current"] = 0
+        self._update_location_controls()
+        self._update_chapter_list(length=self.chapter_per_page ,offset=self.page_location["current"])
 
-    @abstractmethod
     def _on_end(self):
+        self.page_location["current"] = self.page_location["end"]-1
+        self._update_location_controls()
+        self._update_chapter_list(length=self.chapter_per_page ,offset=self.page_location["current"])
+
+    def _on_menu_add(self, widget):
         pass
 
-    @abstractmethod
-    def _on_menu_add(self):
-        pass
-
-    @abstractmethod
     def _on_next(self):
-        pass
+        if self.page_location["current"] < self.page_location["end"]-1:
+            self.page_location["current"] += 1
+            self._update_location_controls()
+            self._update_chapter_list(length=self.chapter_per_page, offset=self.page_location["current"] )
 
-    @abstractmethod
     def _on_list_select(self, data=None):
         pass
 
-    @abstractmethod
     def _on_location_change(self, event=None):
         pass
 
-    @abstractmethod
     def _on_prev(self):
-        pass
+        if self.page_location["current"] > 0:
+            self.page_location["current"] -= 1
+            self._update_location_controls()
+            self._update_chapter_list(length=self.chapter_per_page, offset=self.page_location["current"] )
 
-    @abstractmethod
     def _on_quit(self):
         pass
 
-    @abstractmethod
     def _on_remove(self):
         pass
 
-    @abstractmethod
-    def _on_search_change(self, event=None):
+    def _on_search_change(self, widget):
         pass
 
     def _on_sort(self):
         self._sort = not self._sort
         self._update_chapter_list()
 
-    @abstractmethod
     def _on_stream_change(self, event):
         pass
 
-    @abstractmethod
     def _on_update(self):
         pass
 
-    @abstractmethod
     def _update_chapter_list(self):
         pass 
  
-    @abstractmethod
     def _update_stream_dropdown(self):
         pass
 
@@ -227,6 +213,10 @@ class control(ABC):
         else:
             return False
 
+    @staticmethod
+    def get_config():
+        return control.appConfig
+        
     @staticmethod
     def read_title_cache(json_file):
         manga_string = ""
@@ -241,17 +231,22 @@ class control(ABC):
         else:
             return None
 
+    @staticmethod
+    def set_config(key, value):
+        control.appConfig[key] = value
+
+    @staticmethod
+    def set_config_dict(json_dict):
+        control.appConfig =  json_dict
+
     # Thread worker methods -----------------------------------------------------------------#
 
-    @abstractmethod
     def _add_title_from_url_runner( self ):
         pass
 
-    @abstractmethod
     def _download_chapter_runner(self):
         pass
     
-    @abstractmethod
-    def _update_stream_runner( self, manga_object ):
+    def _update_stream_runner( self, title ):
         pass
 

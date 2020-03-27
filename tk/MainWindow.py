@@ -28,22 +28,13 @@ except:
 import os, sys ,json, platform, pygubu, threading, shutil, re, traceback
 from PIL import Image, ImageTk
 from queue import Queue
-try:
-    from ..src.MangaPark import MangaPark_Source
-    from ..src.TitleSource import TitleSource
-    from ..src.controller import control
-    from .ScrollableListBox import ScrollableListbox
-    from .Viewer import Viewer
-    from .popups import add_Window, about_dialog
-    from .ChapterRow import ChapterRow
-except:
-    from src.MangaPark import MangaPark_Source
-    from src.TitleSource import TitleSource
-    from src.controller import control
-    from tk.ScrollableListBox import ScrollableListbox
-    from tk.Viewer import Viewer
-    from tk.popups import add_Window, about_dialog
-    from tk.ChapterRow import ChapterRow
+from src.MangaPark import MangaPark_Source
+from src.TitleSource import TitleSource
+from src.controller import control
+from tk.ScrollableListBox import ScrollableListbox
+from tk.Viewer import Viewer
+from tk.popups import add_Window, about_dialog
+from tk.ChapterRow import ChapterRow
 
 class MainWindow(Tk, control):
 
@@ -287,19 +278,14 @@ class MainWindow(Tk, control):
         self.update_status("Loaded Title List")
 
     def _update_location_bounds(self):
-        self.page_location["current"] = 0
-        self.page_location["end"] = int( len( self.selection["Stream"] ) / self.chapter_per_page )
-        
-        if len( self.selection["Stream"] ) % self.chapter_per_page != 0:
-            self.page_location["end"] += 1 
-        
-        #print("number of chapter pages: " + str( self.page_location["end"]))
+        super()._update_location_bounds()
+
         selection_values = []
         for i in range(1, self.page_location["end"]+1) :
             selection_values.append( str(i) + "/" + str(self.page_location["end"]) )
         self.Widgets["Location Select"]["values"] = selection_values
 
-    def _update_location_controls(self,disable=False):
+    def _update_location_controls(self, disable=False):
         if disable == True:
             self.Widgets["Location Select"].delete(0, END)
             self.Widgets["Location Select"].insert(0, "" )
@@ -365,29 +351,9 @@ class MainWindow(Tk, control):
     def about(self):
         about_dialog(master=self)
 
-    def _on_beginning(self):
-        #print("Begginning Button pressed")
-        self.page_location["current"] = 0
-        self._update_location_controls()
-        self._update_chapter_list(length=self.chapter_per_page ,offset=self.page_location["current"])
-
-    def _on_end(self):
-        #print("End button pressed")
-        self.page_location["current"] = self.page_location["end"]-1
-        self._update_location_controls()
-
-        self._update_chapter_list(length=self.chapter_per_page ,offset=self.page_location["current"])
-    
     def _on_menu_add(self):
         self.Widgets["Add Popup"] = add_Window(master=self,OKCommand=self._on_add_responce)
     
-    def _on_next(self):
-        #print("Next button pressed")
-        if self.page_location["current"] < self.page_location["end"]-1:
-            self.page_location["current"] += 1
-            self._update_location_controls()
-            self._update_chapter_list(length=self.chapter_per_page, offset=self.page_location["current"] )
-
     def _on_quit(self):
         self._export_title_list_to_file()
         if self.threads["Title"] != None:
@@ -448,26 +414,18 @@ class MainWindow(Tk, control):
         page_elements = page_str.split("/")
         if event.keycode == 36:
             #print("keyPress type")
-            #print(self.Widgets["Location Select"].get())
-
-            page_num = int( page_elements[0] ) - 1
-            if page_num > self.page_location["end"]:
-                page_num = self.page_location["end"]-1
-            elif page_num <= 0:
-                page_num = 0
-            self.page_location["current"] = page_num
+            if page_elements[0].isnumeric() == True:
+                page_num = int( page_elements[0] ) - 1
+                if page_num > self.page_location["end"]:
+                    page_num = self.page_location["end"]-1
+                elif page_num <= 0:
+                    page_num = 0
+                self.page_location["current"] = page_num
         else:
             self.page_location["current"] = int(page_elements[0])-1
         
         self._update_location_controls()
         self._update_chapter_list(length=self.chapter_per_page, offset=self.page_location["current"])
-
-    def _on_prev(self):
-        #print("Previous button pressed")
-        if self.page_location["current"] > 0:
-            self.page_location["current"] -= 1
-            self._update_location_controls()
-            self._update_chapter_list(length=self.chapter_per_page, offset=self.page_location["current"] )
 
     def _on_remove(self):
         self.Widgets["InfoFrame"].grid_forget()
