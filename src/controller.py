@@ -12,7 +12,7 @@
 #notes           :                                                              #
 #python_version  :3.6.9                                                         #
 #===============================================================================#
-
+from abc import ABC, abstractmethod
 import json, os, sys, platform
 from queue import Queue
 from collections import deque
@@ -21,7 +21,7 @@ try:
 except:
     from .MangaPark import MangaPark_Source
     
-class control():
+class control(ABC):
 
     appConfig = {}
 
@@ -39,7 +39,12 @@ class control():
         self._current_task = {
             "Title" : None,
             "Chapter" : None
-         }
+        }
+        self.page_location = {
+            "current" : 0,
+            "end" : 0
+        }
+        self.chapter_per_page = 50
         self.Title_Dict = {}
         self.Streams = []
         self.search_locations = set()
@@ -76,9 +81,11 @@ class control():
                 return True
         return False
 
-    def add_title_entry(self,name):
+    @abstractmethod
+    def add_title_entry(self, name):
         pass
 
+    @abstractmethod
     def update_status(self, message):
         pass
 
@@ -137,29 +144,57 @@ class control():
             f.write(json.dumps(dic, separators=(",", " : "), indent=4))
             f.close()
 
+    @abstractmethod
     def _load_title_entry(self):
         pass
 
+    @abstractmethod
     def _update_title_details(self):
         pass
 
     # Signal callback methods ---------------------------------------------------------------#
-
+    
+    @abstractmethod
     def about(self):
         pass
 
+    @abstractmethod
+    def _on_beginning(self):
+        pass
+
+    @abstractmethod
+    def _on_end(self):
+        pass
+
+    @abstractmethod
     def _on_menu_add(self):
         pass
 
-    def _on_quit(self):
+    @abstractmethod
+    def _on_next(self):
         pass
 
+    @abstractmethod
     def _on_list_select(self, data=None):
         pass
 
+    @abstractmethod
+    def _on_location_change(self, event=None):
+        pass
+
+    @abstractmethod
+    def _on_prev(self):
+        pass
+
+    @abstractmethod
+    def _on_quit(self):
+        pass
+
+    @abstractmethod
     def _on_remove(self):
         pass
 
+    @abstractmethod
     def _on_search_change(self, event=None):
         pass
 
@@ -167,15 +202,19 @@ class control():
         self._sort = not self._sort
         self._update_chapter_list()
 
+    @abstractmethod
     def _on_stream_change(self, event):
         pass
 
+    @abstractmethod
     def _on_update(self):
         pass
 
+    @abstractmethod
     def _update_chapter_list(self):
         pass 
  
+    @abstractmethod
     def _update_stream_dropdown(self):
         pass
 
@@ -184,7 +223,6 @@ class control():
     @staticmethod
     def check_title_cache_exists( search_location, title_name ):
         if os.path.isfile(search_location+'/'+ title_name):
-
             return True
         else:
             return False
@@ -205,12 +243,15 @@ class control():
 
     # Thread worker methods -----------------------------------------------------------------#
 
+    @abstractmethod
     def _add_title_from_url_runner( self ):
         pass
 
+    @abstractmethod
     def _download_chapter_runner(self):
         pass
     
+    @abstractmethod
     def _update_stream_runner( self, manga_object ):
         pass
 

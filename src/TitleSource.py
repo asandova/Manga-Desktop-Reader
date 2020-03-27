@@ -66,11 +66,17 @@ class TitleSource:
             return 0
     
     def extract_manga(self):
+            print("Extracting Domain...")
             self._extract_domain(self.site_url)
+            print("Extracting Title...")
             self._extract_title()
+            print("extracting cover...")
             self._extract_cover()
+            print("Extracting title info...")
             self._extract_managa_info()
+            print("Exracting summary...")
             self._extract_summary()
+            print("Extracting streams...")
             self._extract_streams()
 
     def _extract_domain(self, url):
@@ -189,6 +195,13 @@ class TitleSource:
 
     def get_cover_location(self):
         return self.cover_location
+
+    def get_site_name(self):
+        return self.site_name
+
+    def set_site_name(self, name):
+        if type(name) == str:
+            self.site_name = name
 
     def get_streams(self):
         return self.streams

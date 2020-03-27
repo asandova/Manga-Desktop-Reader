@@ -17,7 +17,7 @@ import json, os, platform
 from src.TitleSource import TitleSource
 from src.Chapter import Chapter
 
-if __name__ == "__main__":
+def main():
     #config = {}
     if os.path.exists("config.json") == True:
         with open("config.json",'r') as f:
@@ -53,3 +53,7 @@ if __name__ == "__main__":
     main = MainWindow( UI_Template=MainWindow.appConfig["UI"]["Main"], title="Manga Reader" )
 
     main.mainloop()
+
+
+if __name__ == "__main__":
+    main()

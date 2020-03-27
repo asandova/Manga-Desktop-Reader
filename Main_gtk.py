@@ -9,7 +9,7 @@
 #usage           :the driver script using gtk3 GUI library                      #
 #notes           :                                                              #
 #python_version  :3.6.9                                                         #
-#===============================================================================#
+#===============================================================================# 
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk as gtk
@@ -20,7 +20,7 @@ from src.Chapter import Chapter
 
 import os, platform, json
 
-if __name__ == '__main__':
+def main():
     if os.path.exists("config.json") == True:
         with open("config.json",'r') as f:
             config_string = f.read()
@@ -57,3 +57,6 @@ if __name__ == '__main__':
     main = MainWindow(appConfig["UI"]["Main"], "Manga_Reader_Viewer_window.glade", "Manga_Reader_add_manga_dialog.glade")
     #main = Main(config["UI"]["Main"], "Manga_Reader_Viewer_window.glade", "Manga_Reader_add_manga_dialog.glade")
     gtk.main()
+
+if __name__ == '__main__':
+    main()

@@ -35,6 +35,7 @@ class MangaPark_Source(TitleSource):
         TitleSource.__init__(self)
         self.site_url = "https://www.mangapark.net"
         self.site_domain = "https://www.mangapark.net"
+        self.site_name = "Manga Park"
 
 
     def from_dict(self, dictionary):

@@ -15,7 +15,7 @@ try:
     from tkinter import Tk, Button, Frame, Entry, Label, Listbox, Menubutton, Menu, Message, Scrollbar, PanedWindow, LabelFrame, StringVar,Canvas, Text, messagebox, Grid
     from tkinter import LEFT, RIGHT, CENTER, TOP, BOTTOM, BOTH, X, Y, N, NE, E, SE, S, SW, W, NW, WORD, DISABLED, INSERT, END, NORMAL,SINGLE,VERTICAL,HORIZONTAL
     from tkinter import FLAT, RAISED, SUNKEN, GROOVE, RIDGE
-    from tkinter import font
+    from tkinter import font, Event
     from tkinter.ttk import Style, Button, Frame, Entry, Label, Menubutton, Scrollbar, PanedWindow, LabelFrame
 
 except:
@@ -31,7 +31,7 @@ from queue import Queue
 try:
     from ..src.MangaPark import MangaPark_Source
     from ..src.TitleSource import TitleSource
-    from ..scr.controller import control
+    from ..src.controller import control
     from .ScrollableListBox import ScrollableListbox
     from .Viewer import Viewer
     from .popups import add_Window, about_dialog
@@ -70,7 +70,7 @@ class MainWindow(Tk, control):
                 "Genres"    : StringVar(),
                 "Summary"   : StringVar(),
                 "Status"    : StringVar(),
-                "Source Name" : StringVar(),
+                "Source Name" : StringVar()
             }
 
             self.title(title)
@@ -95,7 +95,7 @@ class MainWindow(Tk, control):
 
         self.Widgets["Main Window"] = self.builder.get_object("MainWindow", master=self)
         self.Widgets["Menu"] = self.builder.get_object("Menu",master=self)
-        self.Widgets["Add Command"] = self.builder.get_object("AddMangaCommand")
+        self.Widgets["Add Command"] = self.builder.get_object("AddTitleCommand")
         self.Widgets["Quit Command"]= self.builder.get_object("QuitCommand")
         self.Widgets["Title Frame"] = self.builder.get_object("Titleframe")
         self.Widgets["Title List"] = None
@@ -111,6 +111,12 @@ class MainWindow(Tk, control):
         self.Widgets["Summary Text"] = self.builder.get_object("SummaryText")
         self.Widgets["Summary Frame"] = self.builder.get_object("SummaryFrame")
         self.Widgets["Stream Select"] = self.builder.get_object("StreamSelect")
+        self.Widgets["Search Button"] = self.builder.get_object("SearchButton")
+        self.Widgets["Beginning Button"] = self.builder.get_object("BeginningButton")
+        self.Widgets["Prev Button"] = self.builder.get_object("PrevButton")
+        self.Widgets["Location Select"] = self.builder.get_object("Location")
+        self.Widgets["Next Button"] = self.builder.get_object("NextButton")
+        self.Widgets["End Button"] = self.builder.get_object("EndButton")
         self.Widgets["Remove Button"] = self.builder.get_object("RemoveButton")
         self.Widgets["Update Button"] = self.builder.get_object("UpdateButton")
         self.Widgets["Sort Button"] = self.builder.get_object("SortButton")
@@ -144,12 +150,38 @@ class MainWindow(Tk, control):
         self.Widgets["Stream Select"]["state"] = "readonly"
         self.Widgets["Stream Select"]["font"] = self.Verdana_Normal_12
 
+        self.Widgets["Location Select"].bind( "<FocusOut>", 
+            lambda e: 
+                self.Widgets["Location Select"].unbind("<Return>")
+        )
+        self.Widgets["Location Select"].bind( "<FocusIn>", 
+            lambda e:
+                self.Widgets["Location Select"].bind("<Return>", self._on_location_change)
+        )
+        self.Widgets["Location Select"].bind("<<ComboboxSelected>>", self._on_location_change)
+        self.Widgets["Location Select"]["font"] = self.Verdana_Normal_12
+        self.Widgets["Location Select"]["state"] = DISABLED
+
         self.Widgets["Status Label"]["textvariable"] = self.Info["Status"]
+
+        self.Widgets["Search Button"].config(command=self._on_search_change)
+        self.Widgets["Beginning Button"].config(command=self._on_beginning)
+        self.Widgets["Prev Button"].config(command=self._on_prev)
+        self.Widgets["Next Button"].config(command=self._on_next)
+        self.Widgets["End Button"].config(command=self._on_end)
         self.Widgets["Update Button"].config(command=self._on_update)
         self.Widgets["Remove Button"].config(command=self._on_remove)
         self.Widgets["Sort Button"].config(command=self._on_sort)
 
-        self.Widgets["Search Entry"].bind("<Return>", self._on_search_change)
+        self.Widgets["Search Entry"].bind( "<FocusOut>", 
+            lambda e: 
+                self.Widgets["Search Entry"].unbind("<Return>")
+        )
+        self.Widgets["Search Entry"].bind( "<FocusIn>", 
+            lambda e:
+                self.Widgets["Search Entry"].bind("<Return>", self._on_search_change)
+            )
+        #self.Widgets["Search Entry"].bind("<Return>", self._on_search_change)
         
         self.Widgets["Main Window"].pack(fill=BOTH,expand=1)
         self.Widgets["Title List"] = ScrollableListbox(master=self.Widgets["Title Frame"], command=self._on_list_select)
@@ -254,13 +286,56 @@ class MainWindow(Tk, control):
             self.add_title_entry(m)
         self.update_status("Loaded Title List")
 
-    def _on_remove_chapter(self, chapter_row):
-        chapter_row.update_state("download", True)
-        chapter_row.Info["Download"].set("Download")
-        chapter_row.update_state("view", False)
-        chapter_row.update_state("remove", False)
-        if os.path.isfile(chapter_row.chapter_path+'/'+chapter_row.chapter.directory+ '.zip') == True:
-            os.remove(chapter_row.chapter_path+"/"+chapter_row.chapter.directory+".zip")
+    def _update_location_bounds(self):
+        self.page_location["current"] = 0
+        self.page_location["end"] = int( len( self.selection["Stream"] ) / self.chapter_per_page )
+        
+        if len( self.selection["Stream"] ) % self.chapter_per_page != 0:
+            self.page_location["end"] += 1 
+        
+        #print("number of chapter pages: " + str( self.page_location["end"]))
+        selection_values = []
+        for i in range(1, self.page_location["end"]+1) :
+            selection_values.append( str(i) + "/" + str(self.page_location["end"]) )
+        self.Widgets["Location Select"]["values"] = selection_values
+
+    def _update_location_controls(self,disable=False):
+        if disable == True:
+            self.Widgets["Location Select"].delete(0, END)
+            self.Widgets["Location Select"].insert(0, "" )
+            self.Widgets["Location Select"]["state"] = DISABLED
+            self.Widgets["Next Button"]["state"] = DISABLED
+            self.Widgets["End Button"]["state"] = DISABLED
+            self.Widgets["Prev Button"]["state"] = DISABLED
+            self.Widgets["Beginning Button"]["state"] = DISABLED
+
+        else:
+            self.Widgets["Location Select"].delete(0, END)
+            self.Widgets["Location Select"].insert(0, str( self.page_location["current"]+1) +"/"+ str(self.page_location["end"]))
+
+            if self.page_location["end"] == 1:
+                self.Widgets["Next Button"]["state"] = DISABLED
+                self.Widgets["End Button"]["state"] = DISABLED
+                self.Widgets["Prev Button"]["state"] = DISABLED
+                self.Widgets["Beginning Button"]["state"] = DISABLED
+
+            elif self.page_location["current"] == self.page_location["end"]-1:
+                self.Widgets["Next Button"]["state"] = DISABLED
+                self.Widgets["End Button"]["state"] = DISABLED
+                self.Widgets["Prev Button"]["state"] = NORMAL
+                self.Widgets["Beginning Button"]["state"] = NORMAL
+
+            elif self.page_location["current"] == 0 :
+                self.Widgets["Next Button"]["state"] = NORMAL
+                self.Widgets["End Button"]["state"] = NORMAL
+                self.Widgets["Prev Button"]["state"] = DISABLED
+                self.Widgets["Beginning Button"]["state"] = DISABLED
+
+            else:
+                self.Widgets["Next Button"]["state"] = NORMAL
+                self.Widgets["End Button"]["state"] = NORMAL
+                self.Widgets["Prev Button"]["state"] = NORMAL
+                self.Widgets["Beginning Button"]["state"] = NORMAL
 
     def _update_title_details(self):
         load = Image.open(self.selection["Title"].get_cover_location())
@@ -269,6 +344,7 @@ class MainWindow(Tk, control):
         self.Widgets["Cover"]["height"] = render.height()
         self.Widgets["Cover"].create_image(render.width()/2,render.height()/2,anchor="c", image=render)
         self.Widgets["Cover"].image = render
+        self.Info["Source Name"].set( self.selection["Title"].get_site_name() )
         self.Info["Title"].set(self.selection["Title"].get_title(group=6))
         authors_string = " Author(s): " + self.selection["Title"].get_Authors_str(group=4)
         artists_string = " Artist(s)  : " + self.selection["Title"].get_Artists_str(group=4)
@@ -282,15 +358,35 @@ class MainWindow(Tk, control):
         self.Widgets["Summary Text"].insert(END, self.selection["Title"].get_summary())
         self.Widgets["Summary Text"]["state"] = DISABLED
         if self.selection["Stream"] != None:
-            self._update_chapter_list()
+            self._update_chapter_list(length=self.chapter_per_page, offset=self.page_location["current"])
  
     # Signal callback methods ---------------------------------------------------------------#
 
     def about(self):
         about_dialog(master=self)
 
+    def _on_beginning(self):
+        #print("Begginning Button pressed")
+        self.page_location["current"] = 0
+        self._update_location_controls()
+        self._update_chapter_list(length=self.chapter_per_page ,offset=self.page_location["current"])
+
+    def _on_end(self):
+        #print("End button pressed")
+        self.page_location["current"] = self.page_location["end"]-1
+        self._update_location_controls()
+
+        self._update_chapter_list(length=self.chapter_per_page ,offset=self.page_location["current"])
+    
     def _on_menu_add(self):
         self.Widgets["Add Popup"] = add_Window(master=self,OKCommand=self._on_add_responce)
+    
+    def _on_next(self):
+        #print("Next button pressed")
+        if self.page_location["current"] < self.page_location["end"]-1:
+            self.page_location["current"] += 1
+            self._update_location_controls()
+            self._update_chapter_list(length=self.chapter_per_page, offset=self.page_location["current"] )
 
     def _on_quit(self):
         self._export_title_list_to_file()
@@ -333,15 +429,45 @@ class MainWindow(Tk, control):
             else:
                 messagebox.showerror("Unsupported Title Site",domain + " is currently not supported")
 
-    def _on_list_select(self, data ,widget=None):
-        self.selection["Title"] = self.Title_Dict[data[1]]
-        self.selection["Stream"] = None
-        if self.Widgets["InfoFrame"].winfo_ismapped() == False:
-            self.Widgets["InfoFrame"].grid(row=0,column=0, sticky=N+E+S+W, pady=2, padx=2)
+    def _on_list_select(self, data, widget=None):
+        if self.selection["Title"] == None or self.selection["Title"] != self.Title_Dict[data[1]]:
+            self.selection["Title"] = self.Title_Dict[data[1]]
+            self.selection["Stream"] = None
+            if self.Widgets["InfoFrame"].winfo_ismapped() == False:
+                self.Widgets["InfoFrame"].grid(row=0,column=0, sticky=N+E+S+W, pady=2, padx=2)
+
+            self._update_location_controls(disable=True)
+
+            self._update_title_details()
+            self._update_stream_dropdown()
+            self._update_chapter_list(length=self.chapter_per_page, offset=self.page_location["current"])
+
+    def _on_location_change(self, event=None):
+        #print("Location change")
+        page_str = self.Widgets["Location Select"].get()
+        page_elements = page_str.split("/")
+        if event.keycode == 36:
+            #print("keyPress type")
+            #print(self.Widgets["Location Select"].get())
+
+            page_num = int( page_elements[0] ) - 1
+            if page_num > self.page_location["end"]:
+                page_num = self.page_location["end"]-1
+            elif page_num <= 0:
+                page_num = 0
+            self.page_location["current"] = page_num
+        else:
+            self.page_location["current"] = int(page_elements[0])-1
         
-        self._update_title_details()
-        self._update_stream_dropdown()
-        self._update_chapter_list()
+        self._update_location_controls()
+        self._update_chapter_list(length=self.chapter_per_page, offset=self.page_location["current"])
+
+    def _on_prev(self):
+        #print("Previous button pressed")
+        if self.page_location["current"] > 0:
+            self.page_location["current"] -= 1
+            self._update_location_controls()
+            self._update_chapter_list(length=self.chapter_per_page, offset=self.page_location["current"] )
 
     def _on_remove(self):
         self.Widgets["InfoFrame"].grid_forget()
@@ -353,6 +479,9 @@ class MainWindow(Tk, control):
             shutil.rmtree(location)
             del self.Title_Dict[self.selection["Title"].get_title()]
             self.Widgets["Title List"].delete( self.selection["Title"].get_title() )
+            self.selection["Title"] = None
+            self.selection["stream"] = None
+            self.selection["chapter"] = None
 
     def _on_remove_chapter(self, chapter_row):
         chapter_row.update_state("download", "Download", active=True)
@@ -376,13 +505,17 @@ class MainWindow(Tk, control):
 
     def _on_sort(self):
         self._sort = not self._sort
-        self._update_chapter_list()
+        self._update_chapter_list(length=self.chapter_per_page, offset=self.page_location["current"])
 
     def _on_stream_change(self, event):
         self.selection["Stream"] = self.selection["Title"].get_stream_with_name(
             self.Widgets["Stream Select"].get()
         )
-        self._update_chapter_list()
+        #print( len( self.Widgets["Location Select"]["values"] ) )
+        self.Widgets["Location Select"]["state"] = NORMAL
+        self._update_location_bounds()
+        self._update_location_controls()
+        self._update_chapter_list(length=self.chapter_per_page, offset=self.page_location["current"])
 
     def _on_view(self, number):
         self.selection["Chapter"] = self.selection["Stream"].get_chapter(number)
@@ -410,21 +543,44 @@ class MainWindow(Tk, control):
             #should never get here
             messagebox.showwarning("Warning","No Title Stream Selected")
 
-    def _update_chapter_list(self, start=0, end=-1):
+    def _update_chapter_list(self, length=-1, offset=0):
         if self.selection["Stream"] != None:
-
+            
+            #removing old chapter entries
             if len(self.Chapter_List) > 0:
                 for r in self.Chapter_List:
                     r[0].destroy()
                 self.Chapter_List = []
 
+            #getting new chapter list
             chapters = self.selection["Stream"].get_chapters()
+            
+            #applying sort
             if self._sort == True :
                 chapters.sort(reverse=True)
             else: 
                 chapters.sort(reverse=False)
-            if end == -1 or end > len(chapters):
+
+            start = None
+            end = None
+
+            if length == -1 or length > len(chapters):
+                start = 0
                 end = len(chapters)
+            else:
+                self.page_location["end"] = int( len(chapters) / length)
+                if len(chapters) % length != 0:
+                    self.page_location["end"] += 1
+                
+                if offset >= self.page_location["end"]:
+                    offset = self.page_location["end"]
+                    self.page_location["current"] = offset
+                
+                start = length * offset
+                end = length * offset + length
+                if end > len(chapters):
+                    end = len(chapters)
+
             for i in range(start, end):
                 row = ChapterRow(   master=self.Widgets["InfoFrame"],
                                     masterWindow=self,
@@ -435,7 +591,7 @@ class MainWindow(Tk, control):
                                     downloadcommand=self._download_chapter,
                                     removecommand=self._on_remove_chapter
                 )
-                row.grid(row=8+i, column=0, columnspan=5, sticky=E+W)
+                row.grid(row=8+i, column=0, columnspan=11, sticky=E+W)
                 row["relief"] = "groove"
 
                 self.Chapter_List.append( (row , hash(row) )  )
@@ -446,9 +602,11 @@ class MainWindow(Tk, control):
                     self.Chapter_List = [] 
  
     def _update_stream_dropdown(self):
-        if self.selection["Stream"] != None:
+        if self.selection["Stream"] == None:
+            self.Widgets["Stream Select"]["state"] = NORMAL
             self.Widgets["Stream Select"].delete(0, END)
             self.Widgets["Stream Select"].insert(0,"Select Stream")
+            self.Widgets["Stream Select"]["state"] = "readonly"
         streamlist = self.selection["Title"].get_streams()
         streamlist_names = []
         for i in range(0,len(streamlist)):
@@ -555,5 +713,6 @@ class MainWindow(Tk, control):
                 messagebox.showerror("Update Error", "Site returned error " + str(status) )
             self.threads["Stream"] = None
         except Exception as e:
+            self.update_status( "Failed to update " + self.selection["Title"].get_title())
             traceback.print_exc(file=sys.stdout)
             print("Error occured: " + str(e))

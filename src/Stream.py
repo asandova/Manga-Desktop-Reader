@@ -38,12 +38,17 @@ class Stream:
     def get_chapter(self,chapter_number):
         return self.chapters[chapter_number]
 
+    def __len__(self):
+        return len(self.chapters)
+
     def get_name(self):
         return self.name
     def get_directory(self):
         return self.directory
     def get_id(self):
         return self.id
+
+
 
     def __str__(self):
         #print("converting Manga_Stream to string")
