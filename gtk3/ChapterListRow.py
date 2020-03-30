@@ -122,20 +122,23 @@ class ChapterListBoxRow(gtk.ListBoxRow):
             #print("changing remove button")
             if text != None:
                 self.RowWidgets["Remove Button"].set_label(text)
-                self.RowWidgets["Remove Button"].set_tooltip_text(tooltip)
+                if tooltip != None:
+                    self.RowWidgets["Remove Button"].set_tooltip_text(tooltip)
             self.RowWidgets["Remove Button"].set_sensitive(active)
 
         elif button == "download":
             #print("changing download button")
             if text != None:
                 self.RowWidgets["Download Button"].set_label(text)
-                self.RowWidgets["Download Button"].set_tooltip_text(tooltip)
+                if tooltip != None:
+                    self.RowWidgets["Download Button"].set_tooltip_text(tooltip)
             self.RowWidgets["Download Button"].set_sensitive(active)
         elif button == "view":
             #print("changing view button")
             if text != None:
                 self.RowWidgets["View Button"].set_label(text)
-                self.RowWidgets["View Button"].set_tooltip_text(tooltip)
+                if tooltip != None:
+                    self.RowWidgets["View Button"].set_tooltip_text(tooltip)
             self.RowWidgets["View Button"].set_sensitive(active)
 
     # Signal Handlers -----------------------------------------------------------------------#

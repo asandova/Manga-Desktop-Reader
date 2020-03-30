@@ -12,7 +12,7 @@
 #===============================================================================#
 
 try:
-    from tkinter import Tk, Button, Frame, Entry, Label, Listbox, Menubutton, Menu, Message, Scrollbar, PanedWindow, LabelFrame, StringVar,Canvas, Text, messagebox, Grid
+    from tkinter import Tk, Widget, Button, Frame, Entry, Label, Listbox, Menubutton, Menu, Message, Scrollbar, PanedWindow, LabelFrame, StringVar,Canvas, Text, messagebox, Grid
     from tkinter import LEFT, RIGHT, CENTER, TOP, BOTTOM, BOTH, X, Y, N, NE, E, SE, S, SW, W, NW, WORD, DISABLED, INSERT, END, NORMAL,SINGLE,VERTICAL,HORIZONTAL
     from tkinter import FLAT, RAISED, SUNKEN, GROOVE, RIDGE
     from tkinter import font, Event
@@ -25,21 +25,39 @@ except:
     from Tkinter import font
     from Tkinter.ttk import Style, Button, Frame, Entry, Label, Menubutton, Scrollbar, PanedWindow, LabelFrame
 
-import os, sys ,json, platform, pygubu, threading, shutil, re, traceback
+import os, sys ,json, platform, pygubu, threading, shutil, re, traceback, logging
+import math
 from PIL import Image, ImageTk
 from queue import Queue
-from src.MangaPark import MangaPark_Source
+#from src.MangaPark import MangaPark_Source
+from src.pluginManager import Manager
 from src.TitleSource import TitleSource
 from src.controller import control
 from tk.ScrollableListBox import ScrollableListbox
+from tk.ScrollableFrame import ScrollableFrame
 from tk.Viewer import Viewer
 from tk.popups import add_Window, about_dialog
 from tk.ChapterRow import ChapterRow
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter("%(asctime)s:%(name)s -- %(message)s")
+
+log_file = "logs/TKMainWindow.log"
+os.makedirs(os.path.dirname( log_file ), exist_ok=True)
+
+file_handler = logging.FileHandler(log_file)
+file_handler.setLevel(logging.WARNING)
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
 
 class MainWindow(Tk, control):
 
     Instance = None
 
+    Verdana_Normal_13 = ("verdana", 13, "normal")
     Verdana_Normal_12 = ("verdana", 12, "normal")
     Verdana_Normal_11 = ("verdana", 11, "normal")
     Verdana_Bold_15 = ("verdana", 15, "bold")
@@ -113,7 +131,8 @@ class MainWindow(Tk, control):
         self.Widgets["Sort Button"] = self.builder.get_object("SortButton")
         self.Widgets["Status Label"] = self.builder.get_object("StatusLabel")
         self.Widgets["Search Entry"] = self.builder.get_object("SearchEntry")
-        
+
+        self.Widgets["Search Entry"]["font"] = self.Verdana_Normal_13
         self.Widgets["InfoFrame"].grid_forget()
         self.Widgets["InfoLabelFrame"]["labelwidget"] = Label(textvariable=self.Info["Source Name"], font=self.Verdana_Bold_15)
 
@@ -172,7 +191,6 @@ class MainWindow(Tk, control):
             lambda e:
                 self.Widgets["Search Entry"].bind("<Return>", self._on_search_change)
             )
-        #self.Widgets["Search Entry"].bind("<Return>", self._on_search_change)
         
         self.Widgets["Main Window"].pack(fill=BOTH,expand=1)
         self.Widgets["Title List"] = ScrollableListbox(master=self.Widgets["Title Frame"], command=self._on_list_select)
@@ -198,6 +216,7 @@ class MainWindow(Tk, control):
         self.ChapterQueue.appendleft( (title, stream, chapter, location, hash_id) )
         if self.threads["Chapter"] == None:
             self.threads["Chapter"] = threading.Thread( target=self._download_chapter_runner )
+            logger.info("Starting chapter download thread")
             self.threads["Chapter"].start()
         else:
             if self._current_task["Chapter"] != None:
@@ -325,6 +344,7 @@ class MainWindow(Tk, control):
 
     def _update_title_details(self):
         load = Image.open(self.selection["Title"].get_cover_location())
+        load.thumbnail( (300,350), Image.ANTIALIAS )
         render = ImageTk.PhotoImage(load)
         self.Widgets["Cover"]["width"] = render.width()
         self.Widgets["Cover"]["height"] = render.height()
@@ -383,12 +403,13 @@ class MainWindow(Tk, control):
         urls = data.split(",")
         for u in urls:
             domain = TitleSource.find_site_domain(u)
-            if domain == 'mangapark.net' or domain == 'www.mangapark.net':
-                title = MangaPark_Source()
+            if self.PluginManager.is_source_supported(domain):
+                title = self.PluginManager.create_instance(domain)
                 self.TitleQueue.appendleft( (title, u) )
                 if self.threads["Title"] == None:
                     self.threads["Title"] = threading.Thread(target=self._add_title_from_url_runner)
-                    self.threads["Title"].start()        
+                    logger.info("Starting Title Thread")
+                    self.threads["Title"].start()     
                 
             elif domain == None:
                 messagebox.showerror("Invalid","Invalid site domain")
@@ -469,7 +490,6 @@ class MainWindow(Tk, control):
         self.selection["Stream"] = self.selection["Title"].get_stream_with_name(
             self.Widgets["Stream Select"].get()
         )
-        #print( len( self.Widgets["Location Select"]["values"] ) )
         self.Widgets["Location Select"]["state"] = NORMAL
         self._update_location_bounds()
         self._update_location_controls()
@@ -489,13 +509,10 @@ class MainWindow(Tk, control):
             if self.threads["Stream"] == None:
                 self.update_status(self.selection["Title"].get_title() + "\tUpdating Streams...")
                 self.threads["Stream"] = threading.Thread( target=self._update_stream_runner, args=(self.selection["Title"],) )
-                self.threads["Stream"].start()
-
-            elif self.threads["Stream"].is_alive() == False:
-                self.update_status(self.selection["Title"].get_title() + "\tUpdating Streams...")
-                self.threads["Stream"] = threading.Thread( target=self._update_stream_runner, args=(self.selection["Title"],) )
+                logger.info("Starting Title Update Thread")
                 self.threads["Stream"].start()
             else:
+                logger.warning("Tried to start a secondary Title update thread")
                 messagebox.showwarning("Title Update", "An update is in progress. Wait for update to complete before requesting another.")
         else:
             #should never get here
@@ -567,39 +584,21 @@ class MainWindow(Tk, control):
             self.Widgets["Stream Select"]["state"] = "readonly"
         streamlist = self.selection["Title"].get_streams()
         streamlist_names = []
+        longest = -1
         for i in range(0,len(streamlist)):
+            if len(  streamlist[i].get_name() ) > longest:
+                longest = len( streamlist[i].get_name() )
             streamlist_names.append(streamlist[i].get_name())
+        self.Widgets["Stream Select"]["width"] = longest+2
         self.Widgets["Stream Select"]["values"] = streamlist_names
-
-    # Static Methods ------------------------------------------------------------------------#
-
-    @staticmethod
-    def check_title_cache_exists( search_location, title_name ):
-        if os.path.isfile(search_location+'/'+ title_name):
-            return True
-        else:
-            return False
-
-    @staticmethod
-    def read_title_cache(json_file):
-        title_string = ""
-        with open(json_file, 'r') as f:
-            title_string = f.read()
-            f.close()
-        Title_Dict = json.loads(title_string)
-        if Title_Dict["Site Domain"] == "https://mangapark.net":
-            title = MangaPark_Source()
-            title.from_dict(Title_Dict)
-            return title
-        else:
-            return None
 
     # Thread worker methods -----------------------------------------------------------------#
 
     def _add_title_from_url_runner( self ):
 
         while len(self.TitleQueue) > 0 :
-            if self._KillThreads == True:
+            if self._KillThreads[0] == True:
+                logger.info("Title Thread kill singal received.")
                 return
             self._current_task["Title"] = self.TitleQueue.pop()
             title = self._current_task["Title"][0]
@@ -608,6 +607,7 @@ class MainWindow(Tk, control):
             code = title.request_manga(url)
 
             if code != 0:
+                logger.info("Failed to Connect. HTML Error " + str(code))
                 messagebox.showerror( "Failed to Connect", "HTML Error " + str(code))
                 
             else:
@@ -621,8 +621,10 @@ class MainWindow(Tk, control):
                         title.to_json_file(title.save_location)
                         self.update_status( "Sucsessfully added: " + title.get_title() ) 
                     else:
-                        messagebox.showerror("Title Already Exists",title.get_title())
+                        logger.warning("Insertion of an already existing Title.")
+                        messagebox.showerror("Title Already Exists", title.get_title())
                 except:
+                    logger.exception("Failed to extraction: " + url)
                     messagebox.showerror("Failed to extract","Failed to extract title data from url: " + url)
 
         self.threads["Title"] = None
@@ -630,16 +632,18 @@ class MainWindow(Tk, control):
     def _download_chapter_runner(self):
         while len(self.ChapterQueue) > 0:
             if self._KillThreads[0] == True:
+                logger.info("Chapter Thread kill singal received.")
                 return
             self._current_task["Chapter"] = self.ChapterQueue.pop()
             title = self._current_task["Chapter"][0]
+            print(title)
             stream = self._current_task["Chapter"][1]
             chapter = self._current_task["Chapter"][2]
             row = self.is_chapter_visable( title, stream, chapter )
             if row != None:
-                    row.Info["Download"].set( "Downloading.." )
+                row.Info["Download"].set( "Downloading.." )
             self.update_status( "Downloading " + title.get_title() + " Chapter  " + str(chapter.get_chapter_number()) + "\nChapters Queued " + str( len(self.ChapterQueue) ) )
-            code = title.Download_Manga_Chapter( stream.get_id(), chapter.get_chapter_number(), self._current_task["Chapter"][3], self._KillThreads )
+            code = title.download_title_chapter( stream.get_id(), chapter.get_chapter_number(), self._current_task["Chapter"][3], self._KillThreads )
             row = self.is_chapter_visable( title, stream,chapter )
             if code == 4:
                 return
@@ -668,9 +672,10 @@ class MainWindow(Tk, control):
                 title_object.to_json_file(title_object.save_location)
                 self.update_status( self.selection["Title"].get_title() + "\nUpdated" )
             else:
+                logger.info("Update Error, HTML error code: " + str(status))
                 messagebox.showerror("Update Error", "Site returned error " + str(status) )
-            self.threads["Stream"] = None
-        except Exception as e:
+        except Exception:
+            logger.exception("Failed to update " + self.selection["Title"].get_title())
             self.update_status( "Failed to update " + self.selection["Title"].get_title())
-            traceback.print_exc(file=sys.stdout)
-            print("Error occured: " + str(e))
+        finally:
+            self.threads["Stream"] = None

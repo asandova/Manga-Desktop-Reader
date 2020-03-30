@@ -10,6 +10,10 @@
 #notes           :                                                              #
 #python_version  :3.6.9                                                         #
 #===============================================================================#
+
+
+import sys
+
 from .Chapter import Chapter
 
 class Stream:
@@ -22,8 +26,6 @@ class Stream:
     def add_chapter(self, chap):
         if isinstance(chap,Chapter):
             if self.chapters.get(chap.get_chapter_number()) != None:
-                #print("duplicate chapter number")
-                #self.chapters.insert(i,chap)
                 return
             else:
                 self.chapters[chap.get_chapter_number()] = chap
@@ -48,20 +50,14 @@ class Stream:
     def get_id(self):
         return self.id
 
-
-
     def __str__(self):
-        #print("converting Manga_Stream to string")
         stream_string = "--------" + self.name + "--------\n"
-        #print(len(self.chapters))
         for k in self.chapters.keys():
             stream_string += str( self.chapters[k]  ) + '\n'
-        #print("converted Manga_Stream to string")
         return stream_string
 
     def size(self):
         return len(self.chapters)
-
 
     def to_dict(self):
         dic = {}
@@ -72,7 +68,7 @@ class Stream:
             dic["Chapters"].append( self.chapters[k].to_dict() )
         return dic
 
-    def from_dict(self, dictionary):
+    def from_dict(self, dictionary, chapterclass=Chapter):
         if type(dictionary) is dict:
             self.name = dictionary["Stream Name"]
             self.directory = self.name.replace(' ','_')
@@ -80,7 +76,7 @@ class Stream:
             self.chapters = {}
             for c in dictionary["Chapters"]:
                 #print(type(c))
-                chap = Chapter('',-1)
+                chap = chapterclass("", -1)
                 chap.from_dict( c )
                 self.chapters[chap.get_chapter_number()] = chap
 

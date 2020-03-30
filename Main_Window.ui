@@ -163,12 +163,6 @@
                             <column id="1">
                               <property name="weight">1</property>
                             </column>
-                            <column id="4">
-                              <property name="weight">0</property>
-                            </column>
-                            <column id="5">
-                              <property name="weight">0</property>
-                            </column>
                             <column id="7">
                               <property name="weight">1</property>
                             </column>
@@ -176,6 +170,7 @@
                         </layout>
                         <child>
                           <object class="tk.Canvas" id="Cover">
+                            <property name="height">300</property>
                             <property name="relief">sunken</property>
                             <property name="width">200</property>
                             <layout>
@@ -253,11 +248,11 @@
                         </child>
                         <child>
                           <object class="ttk.Labelframe" id="SummaryFrame">
-                            <property name="height">200</property>
+                            <property name="height">10</property>
                             <property name="labelanchor">n</property>
                             <property name="relief">groove</property>
                             <property name="text" translatable="yes">Summary</property>
-                            <property name="width">200</property>
+                            <property name="width">20</property>
                             <layout>
                               <property name="column">1</property>
                               <property name="columnspan">10</property>

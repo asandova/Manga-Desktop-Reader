@@ -16,43 +16,55 @@ import json, os, sys, platform
 from queue import Queue
 from collections import deque
 try:
-    from src.MangaPark import MangaPark_Source
+    #from src.MangaPark import MangaPark_Source
+    from src.pluginManager import Manager
+    from src.TitleSource import TitleSource
 except:
-    from .MangaPark import MangaPark_Source
-    
+    #from .MangaPark import MangaPark_Source
+    from .pluginManager import Manager
+    from .TitleSource import TitleSource
+
+
 class control():
 
     appConfig = {}
+    instance = None
 
     def __init__(self):
-        self.selection = {
-            "Title" : None,
-            "Stream" : None,
-            "Chapter" : None
-        }
-        self.threads = {
-            "Title" : None,
-            "Stream" : None,
-            "Chapter" : None
-        }
-        self._current_task = {
-            "Title" : None,
-            "Chapter" : None
-        }
-        self.page_location = {
-            "current" : 0,
-            "end" : 0
-        }
-        self.chapter_per_page = 50
-        self.Title_Dict = {}
-        self.Streams = []
-        self.search_locations = set()
-        self.Widgets = {}
-        self.Chapter_List = []
-        self._KillThreads = [False]
-        self._sort = False
-        self.ChapterQueue = deque()
-        self.TitleQueue = deque()
+        if control.instance != None:
+            raise Exception("Only one control object can be instanciated")
+        else:    
+            control.instance = self
+            self.selection = {
+                "Title" : None,
+                "Stream" : None,
+                "Chapter" : None
+            }
+            self.threads = {
+                "Title" : None,
+                "Stream" : None,
+                "Chapter" : None
+            }
+            self._current_task = {
+                "Title" : None,
+                "Chapter" : None
+            }
+            self.page_location = {
+                "current" : 0,
+                "end" : 0
+            }
+            self.chapter_per_page = 50
+            self.Title_Dict = {}
+            self.Streams = []
+            self.search_locations = set()
+            self.Widgets = {}
+            self.Chapter_List = []
+            self._KillThreads = [False]
+            self._sort = False
+            self.ChapterQueue = deque()
+            self.TitleQueue = deque()
+            self.PluginManager = Manager(TitleSource)
+            self.PluginManager.discover_sources()
 
     def in_chapter_queue(self, hash_id):
         #if self._current_task["Chapter"] != None:
@@ -75,7 +87,7 @@ class control():
         pass
 
     def _get_title_list_from_file(self, json_file="tracking_list.json"):
-        
+
         if control.appConfig["Hide Cache Files"] == True:
             if platform.system() == "Linux":
                 json_file = "." + json_file
@@ -96,6 +108,7 @@ class control():
                             title_object = self.read_title_cache(l + '/' + cache_path)
                             if title_object != None:
                                 self.Title_Dict[m] = title_object
+
         print("Searching for untracked Manga")
         for search in control.appConfig["Search Location(s)"]:
             dirs = os.listdir(search)
@@ -131,7 +144,6 @@ class control():
 
     def _load_title_entry(self):
         pass
-
 
     def _update_location_bounds(self):
         self.page_location["current"] = 0
@@ -219,15 +231,15 @@ class control():
         
     @staticmethod
     def read_title_cache(json_file):
-        manga_string = ""
+        title_string = ""
         with open(json_file, 'r') as f:
-            manga_string = f.read()
+            title_string = f.read()
             f.close()
-        Title_Dict = json.loads(manga_string)
-        if Title_Dict["Site Domain"] == "https://mangapark.net":
-            manga = MangaPark_Source()
-            manga.from_dict(Title_Dict)
-            return manga
+        Title_Dict = json.loads(title_string)
+        if  control.instance.PluginManager.is_source_supported( Title_Dict["Site Domain"] ):
+            title = control.instance.PluginManager.create_instance( Title_Dict["Site Domain"] )
+            title.from_dict(Title_Dict)
+            return title
         else:
             return None
 

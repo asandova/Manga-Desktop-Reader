@@ -2,41 +2,54 @@
 # -*- coding: utf-8 -*-
 #===============================================================================#
 #title           :MangaPark.py                                                  #
-#description     :contains the MangaPark class                                  #
+#description     :contains the TitlePlugin for MangaPark                        #
 #author          :August B. Sandoval (asandova)                                 #
 #date            :2020-3-2                                                      #
 #version         :0.3                                                           #
-#usage           :defineds the MangaPark class                                  #
+#usage           :defineds the TitlePlugin for MangaPark                        #
 #notes           :                                                              #
 #python_version  :3.6.9                                                         #
 #===============================================================================#
-from .Chapter import Chapter
-from .TitleSource import TitleSource
-from .Stream import Stream
+from src.Chapter import Chapter
+from src.TitleSource import TitleSource
+from src.Stream import Stream
 
 from bs4 import BeautifulSoup
-import requests, re, json, os
+import requests, re, json, os, logging, shutil
+from zipfile import ZipFile
 
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
+chromeopts = ChromeOptions()
+chromeopts.set_headless()
+assert chromeopts.headless
 
-class MangaPark_Source(TitleSource):
+firefoxopts = FirefoxOptions()
+firefoxopts.set_headless()
+assert firefoxopts.headless
 
-    Versions = {
-        "Duck"  :    4,
-        4   :   "Duck",
-        "Rock"  :    6,
-        6   : "Rock",
-        "Fox"   :   1,
-        1   : "Fox",
-        "Panda" :   3,
-        3   : "Panda"
-    }
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter("%(asctime)s:%(name)s -- %(message)s")
+
+log_file = "logs/MangaPark.log"
+os.makedirs(os.path.dirname( log_file ), exist_ok=True)
+
+file_handler = logging.FileHandler(log_file)
+file_handler.setLevel(logging.WARNING)
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+
+class TitlePlugin(TitleSource):
+
+    _supported_domains = ["mangapark.net","https://mangapark.net"]
 
     def __init__(self):
         TitleSource.__init__(self)
-        self.site_url = "https://www.mangapark.net"
-        self.site_domain = "https://www.mangapark.net"
         self.site_name = "Manga Park"
-
 
     def from_dict(self, dictionary):
         self.site_url = dictionary["Site URL"]
@@ -49,9 +62,10 @@ class MangaPark_Source(TitleSource):
         self.artists = dictionary["Artist(s)"]
         self.genres = dictionary["Genre(s)"] 
         self.cover_location = dictionary["Cover Location"]
+
         for s in dictionary["Manga Stream(s)"]:
             stream = Stream()
-            stream.from_dict( s )
+            stream.from_dict( s, ChapterPlugin )
             self.streams.append( stream )
         
     def to_dict(self):
@@ -68,47 +82,29 @@ class MangaPark_Source(TitleSource):
         dic["Manga Stream(s)"] = []
         for s in self.streams:
             dic["Manga Stream(s)"].append( s.to_dict() )
-
         return dic
 
-    def Download_Manga(self, location="",keep=False):
+    def download_title(self, location=""):
         save_location = self.save_location
         if location != "":
             save_location == location
         for s in self.streams:
             for c in s.chapters:
-                if keep == True:
-                    if self.keep.get(s) == False:
-                        self.keep[s.name] = []
-                        self.keep[s.name].append(c.get_chapter_number)
-                    else:
-                        if self.keep[s.name].count(c.get_chapter_number) == 0:
-                            self.keep[s.name].append(c.get_chapter_number)
-                #title = self.Title.replace(" ", '_')
                 stream_name = s.name.replace(' ', '_')
                 c.download_chapter( save_location +'/'+self.directory+'/'+ stream_name)
 
-    def Download_Manga_stream(self, stream_id, location="",Keep=False):
+    def download_title_stream(self, stream_id, location=""):
         save_location = self.save_location
         if location != "":
             save_location == location
         for s in self.streams:
             if s.id == stream_id:
                 for c in s.chapters:
-                    if Keep == True:
-                        if self.keep.get(s) == False:
-                            self.keep[s.name] = []
-                            self.keep[s.name].append(c.get_chapter_number)
-                        else:
-                            if self.keep[s.name].count(c.get_chapter_number) == 0:
-                                self.keep[s.name].append(c.get_chapter_number)
-
-                    #title = self.Title.replace(" ", '_')
                     stream_name = self.streams[stream_id].name.replace(' ', '_')
                     c.download_chapter( save_location +'/'+self.directory+'/'+ stream_name)
                 return
 
-    def Download_Manga_Chapter(self, stream_id, chapter_number, location="", KillDownload=[False]):
+    def download_title_chapter(self, stream_id, chapter_number, location="", KillDownload=[False]):
         save_location = self.save_location
         if location != "":
             save_location == location
@@ -116,7 +112,6 @@ class MangaPark_Source(TitleSource):
             if s.id == stream_id:
                 for k in s.chapters.keys():
                     if  s.chapters[k].get_chapter_number() == chapter_number:
-                        #title = self.Title.replace(" ", '_')
                         stream = self.get_stream_with_id(stream_id)
                         stream_name = stream.name.replace(' ', '_')
                         code =  s.chapters[k].download_chapter(save_location +'/'+self.directory+'/'+ stream_name,KillDownload)
@@ -152,7 +147,7 @@ class MangaPark_Source(TitleSource):
         s = self.site_html.find('p', class_='summary').text
         self.summary = s
 
-    def _extract_managa_info(self):
+    def _extract_title_info(self):
         table = self.site_html.find('table', class_="attr")
         Author_data = table.find('th', text="Author(s)").parent
         Artist_data = table.find('th', text="Artist(s)").parent
@@ -185,28 +180,8 @@ class MangaPark_Source(TitleSource):
                 number_str = c.text
                 number_str_elements = re.compile("[vV]ol(ume)*[.]*[ ]*[0-9]+[ ]").split(number_str)
                 #print(number_str_elements)
-                number_start = -1
-                number_end = -1
-                #print(number_str_elements[-1])
-                for num in range(0, len(number_str_elements[-1])):
-                    if number_start == -1 and number_str_elements[-1][num].isnumeric():
-                        number_start = num
-                    elif number_start != -1 and number_str_elements[-1][num].isnumeric() == False:
-                        if number_str_elements[-1][num+1].isnumeric() == True:
-                            continue
-                        else:
-                            number_end = num
-                        #print(number_end)
-                        break
-                #print(number_str_elements)
-                #print(f"start Number: {number_start}\tend Number: {number_end}")
-                if number_end != -1:
-                    number = float(number_str_elements[-1][number_start:number_end])
-                elif number_end == -1 and number_start == -1:
-                    print("encountered non-numbered chapter")
-                    continue
-                else:
-                    number = float(number_str_elements[-1][number_start:])
+                number = self.extract_chapter_number( number_str )
+
                 number_str_elements = number_str_elements[-1].split(': ')
                 name = ""
                 if len( number_str_elements) > 1:
@@ -236,43 +211,114 @@ class MangaPark_Source(TitleSource):
                                 break
                         name = name[0:end]
 
-                chap = Chapter(name, number)
+                chap = ChapterPlugin(name, number)
                 chap.set_link( self.site_domain + link)
                 #print(f"adding chapter {chap.get_full_title()}")
                 manga_stream.add_chapter(chap)
             #print("adding stream " + manga_stream.name)
             self.add_stream(manga_stream)
-        print("extraction of streams: Complete")
+        logger.info("extraction of streams: Complete")
 
-    def __str__(self):
-        s = "----------Manga Park----------\n"
-        s += "Title: " + self.Title + "\n"
-        s += "Author(s): "
-        for a in self.authors:
-            s += a + " | "
-        s += "\nArtist(s): "
-        for a in self.artists:
-            s += a + ' | '
-        s+= "\nGenre(s): "
-        for g in self.genres:
-            s += g + ' | '
-        s += "\nSummary: "+ self.summary + "\n"
-        for stream in self.streams:
-            s += str(stream) + "\n"
-        return s
+    # Static Methods ------------------------------------------------------------------------#
 
-"""
-if __name__ == "__main__":
-    
-    #test = MangaPark_Source()
-    
-    test2 = MangaPark_Source()
-    test2.set_default_save_location('./Manga')
-    #test.request_manga("https://mangapark.net/manga/ryoumin-0-nin-start-no-henkyou-ryoushusama-fuurou")
-    test2.request_manga("https://mangapark.net/manga/tensei-shitara-ken-deshita")
-    test2.extract_manga()
-    with open('test.json', 'w') as f:
-        f.write( json.dumps( test2.to_dict(),indent=1 ) ) 
+    @staticmethod
+    def is_domain_supported(domain):
+        for d in TitlePlugin._supported_domains:
+            if domain == d:
+                return True
+        return False
 
-    test2.Download_Manga_Chapter(stream_id=MangaPark_Source.Versions["Fox"],chapter_number=1 , location="./Manga")
-"""
+    @staticmethod
+    def get_supported_domains():
+        return TitlePlugin._supported_domains
+
+class ChapterPlugin(Chapter):
+
+    def __init__(self, name, number):
+        super().__init__(name, number)
+
+    def download_chapter(self, save_location, killDownload=[False]):
+        if killDownload[0] == True:
+            logger.info("Download kill signal received.")
+            return 4
+        
+        try:
+            browser = None
+            if Chapter.Driver_path == None or Chapter.Driver_type == None:
+                return -1
+            elif Chapter.Driver_type == "Chrome":
+                browser = webdriver.Chrome(executable_path=Chapter.Driver_path,options=chromeopts)
+                logger.info("Starting headless Chrome Browser")
+            elif Chapter.Driver_type == "Firefox":
+                browser = webdriver.Firefox(executable_path=Chapter.Driver_path,options=firefoxopts)
+                logger.info("Starting headless Firefox Browser")
+            logger.info("Navigating to " + self.chapter_link)
+            browser.get(self.chapter_link)
+            site_source = BeautifulSoup(browser.page_source, 'lxml')
+            viewer = site_source.find('section', {"class" : "viewer",'id': 'viewer'})
+            pages = viewer.find_all('a',class_='img-link')
+                
+            if len(pages) == 0:
+                logger.info("Failed to find chapter pages.--- Terminiating Borwser.")
+                browser.quit()
+                return 1
+            else:
+                page_name = 'page_'
+                logger.info( "Begining Download of Chapter " + str( self.chapter_number) )
+                #print("Begining Download of Chapter " + str( self.chapter_number) )
+                save_path = save_location+'/'+self.get_full_title() + "/"
+                for p in pages:
+                    if killDownload[0] == True:
+                        logger.info("Download Kill singal received. Clearing download")
+                        if os.path.isdir(save_path):
+                            shutil.rmtree(save_path)
+                        logger.info("Terminiating Browser")  
+                        browser.quit()
+                        return 4
+                    else:
+                        self.number_of_Pages += 1
+                        #print(p.prettify())
+                        url = p.img['src']
+                        num = p.img["i"]
+                        img = requests.get(url)
+                        url_elements = url.split('.')
+                        filename =page_name + num +'.'+ url_elements[-1]
+                        if(img.ok == False):
+                            logger.info("Image URL responded with error:" + str(img.status_code) + " --- Terminating Borwser.")
+                            browser.quit()
+                            return 2
+                        if num == -1:
+                            browser.quit()
+                            return 3
+                        if os.path.isdir(save_path) == False:
+                            os.makedirs(save_path)
+                        with open(save_path+filename, 'wb') as f:
+                            f.write(img.content)
+                            f.close()
+                        if url_elements[-1] == "webp":
+                            jpeg_name = page_name + num +'.jpeg'
+                            ChapterPlugin._convert_webp_to_jpeg( infile=save_path+filename, outfile=save_path+jpeg_name )
+                            os.remove(save_path+filename)
+                            #self.pages[int(num)] = jpeg_name
+                        #else:
+                            #self.pages[int(num)] = filename
+                save_path = save_location+'/'
+                zip_name = self.get_full_title() +".zip"
+                zip_file = ZipFile( save_path+zip_name ,'w')
+                logger.info("Archiving Chapter...")
+                with zip_file:
+                    pages = os.listdir(save_path+self.directory+'/')
+                    for p in pages:
+                        if p != zip_name:
+                            zip_file.write( save_path+self.directory+'/' + p, p ) 
+                            os.remove(save_path+self.directory+'/' +p)
+                zip_file.close()
+                logger.info("Archive Complete")
+                logger.info("Cleaning download space")
+                os.removedirs(save_path+self.directory)
+                logger.info("Download of chapter_"+ str(self.chapter_number)+ ": complete --- Terminiating Browser")
+                browser.quit()
+                return 0
+        except Exception:
+            logger.exception("Error occured: ")
+            return -1

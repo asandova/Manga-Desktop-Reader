@@ -20,7 +20,8 @@ glib.threads_init()
 import os, shutil, threading, re, sys, traceback
 
 from src.controller import control
-from src.MangaPark import MangaPark_Source
+from src.pluginManager import Manager
+#from src.MangaPark import MangaPark_Source
 from src.TitleSource import TitleSource
 from gtk3.ChapterListRow import ChapterListBoxRow
 from gtk3.TitleListBoxRow import TitleListBoxRow
@@ -303,8 +304,8 @@ class MainWindow( control, gtk.Window):
                     error.destroy()
                 else:
                     domain = TitleSource.find_site_domain( u )
-                    if domain == 'mangapark.net' or domain == 'www.mangapark.net':
-                        title = MangaPark_Source()
+                    if self.PluginManager.is_source_supported(domain):
+                        title = self.PluginManager.create_instance(domain)
                         self.TitleQueue.appendleft( (title, u) )
                         if self.threads["Title"] == None:
                             self.threads["Title"] = threading.Thread(target=self._add_title_from_url_runner)
@@ -545,7 +546,7 @@ class MainWindow( control, gtk.Window):
 
     def _download_chapter_runner(self):
         while len(self.ChapterQueue) > 0:
-            if self._KillThreads == True:
+            if self._KillThreads[0] == True:
                 return
             self._current_task["Chapter"] = self.ChapterQueue.pop()
             title = self._current_task["Chapter"][0]
@@ -555,12 +556,12 @@ class MainWindow( control, gtk.Window):
             if row != None:
                 GObject.idle_add( row.update_state,"download", "Downloading...", "Chapter is downloading", False, True )
             GObject.idle_add( self.update_status, True,"Downloading " + title.get_title() + " Chapter  " + str(chapter.get_chapter_number()) + "\nChapters Queued " + str( len(self.ChapterQueue) ) ) 
-            code = title.Download_Manga_Chapter( stream.get_id(),chapter.get_chapter_number(), self._current_task["Chapter"][3], self._KillThreads )
+            code = title.download_title_chapter( stream.get_id(),chapter.get_chapter_number(), self._current_task["Chapter"][3], self._KillThreads )
             row = self._is_chapter_visable( title, stream, chapter )
             if code != 0:
                 GObject.idle_add(self.update_status,False, "Failed to download:\n" + str(chapter) )
                 if row != None:
-                    GObject.idle_add(row.update_state,"download","Download", True, False)
+                    GObject.idle_add(row.update_state,"download","Download",None,True, False)
             else:
                 self.update_status(False, "Download of " + title.get_title() + "\n" + str(chapter) + " --- Completed")
                 if row != None:

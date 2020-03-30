@@ -33,6 +33,9 @@ class ScrollableListbox(Frame):
         self.__VScrollPos = [0,1]
         self.__HScrollPos = [1,0]
 
+        self.bind("<Enter>", self._on_enter)
+        self.bind("<Leave>", self._on_leave)
+
         if vscrollside == "right":
             self.__listpos[1] = 0
             self.__VScrollPos[1] = 1 
@@ -63,6 +66,7 @@ class ScrollableListbox(Frame):
         if position == -1:
             position = END
         self.__ListBox.insert(position, title)
+        self.scrollregion_change()
 
     def delete(self, title):
         """Removes the title from from the listbox
@@ -103,7 +107,7 @@ class ScrollableListbox(Frame):
                 return i
         return -1
 
-    def grid(self, **kwargs):
+    def _build(self):
         self.__HScroll = Scrollbar(master=self, orient="horizontal")
         self.__VScroll = Scrollbar(master=self, orient="vertical")
         self.__ListBox = Listbox(   master=self, 
@@ -114,83 +118,47 @@ class ScrollableListbox(Frame):
         self.__ListBox.bind(
             '<<ListboxSelect>>', self._on_select
         )
+    
         self.__VScroll.config(command=self.__ListBox.yview)
         self.__HScroll.config(command=self.__ListBox.xview)
+
+        if self.__HScroll.get() != (0.0, 1.0):
+            self.__HScroll.grid(row=self.__HScrollPos[0], column=self.__HScrollPos[1],sticky=E+W)
+        if self.__VScroll.get() != (0.0, 1.0):
+            self.__VScroll.grid(row=self.__VScrollPos[0], column=self.__VScrollPos[1],sticky=N+S)
+
         Grid.grid_columnconfigure(self, self.__listpos[1], weight=1)
         Grid.grid_rowconfigure(self, self.__listpos[0], weight=1)
 
-        self.__VScroll.grid( row=self.__VScrollPos[0], column=self.__VScrollPos[1], sticky=N+S)    
-        self.__HScroll.grid( row=self.__HScrollPos[0], column=self.__HScrollPos[1], sticky=E+W)
         self.__ListBox.grid( row=self.__listpos[0],    column=self.__listpos[1],    sticky=E+W+S+N)
-        
-        self.__ListBox.bind("<Enter>", self._on_enter)
-        self.__ListBox.bind("<Leave>", self._on_leave)
+        self.__ListBox.bind("<Configure>", self.scrollregion_change)
 
-        if platform.system() == "Windows":
-            self.__ListBox.bind("<MouseWheel>", self._on_mousewheel)
-            self.__ListBox.bind("<Shift-MouseWheel>", self._on_shift_mousewheel)
-        elif platform.system() == "Linux":
-            self.__ListBox.bind("<Button-4>",self._on_mousewheel)
-            self.__ListBox.bind("<Button-5>",self._on_mousewheel)
-            self.__ListBox.bind("<Shift-Button-4>",self._on_shift_mousewheel)
-            self.__ListBox.bind("<Shift-Button-5>",self._on_shift_mousewheel)
-        
+    def grid(self, **kwargs):
+        self._build()
         Frame.grid(self, **kwargs)
 
     def pack(self, **kwargs):
-        self.__ScrollRow = Frame(master=self)
-        self.__ListRow = Frame(master=self)
-
-        self.__VScroll = Scrollbar( master=self.__ListRow, orient="vertical")
-        self.__HScroll = Scrollbar( master=self.__ScrollRow, orient="horizontal")
-        self.__ListBox = Listbox(   master=self.__ListRow, 
-                                    yscrollcommand=self.__VScroll.set,
-                                    xscrollcommand=self.__HScroll.set
-                                )
-
-        self.__ListBox.bind(
-            '<<ListboxSelect>>', self._on_select
-        )
-        self.__ListBox["selectmode"] = self.mode
-        self.__VScroll.config(command=self.__ListBox.yview)
-        self.__HScroll.config(command=self.__ListBox.xview)
-        self.__Coner = Frame(master=self.__ScrollRow)
-        self.__Coner["width"] = 14
-        self.__Coner["height"] = 14
-
-        if self.__listpos[0] == 1:
-            self.__ScrollRow.pack(side=TOP,fill="x",expand=0)
-            self.__ListRow.pack(side=TOP, fill=BOTH, expand=1)
-        else:
-            self.__ListRow.pack(side=TOP, fill=BOTH, expand=1)
-            self.__ScrollRow.pack(side=TOP,fill="x",expand=0)
-
-        if self.__listpos[1] == 1:
-            self.__VScroll.pack(side=LEFT, fill="y", expand=0)
-            self.__ListBox.pack(side=LEFT, fill=BOTH, expand=1)
-
-            self.__Coner.pack(side=LEFT, fill="none", expand=0)
-            self.__HScroll.pack(side=LEFT, fill="x", expand=1)
-        else:
-            self.__ListBox.pack(side=LEFT, fill=BOTH, expand=1)
-            self.__VScroll.pack(side=RIGHT, fill="y", expand=0)
-
-            self.__HScroll.pack(side=LEFT, fill="x", expand=1)
-            self.__Coner.pack(side=LEFT, fill="none", expand=0)
-
-        self.__ListBox.bind("<Enter>", self._on_enter)
-        self.__ListBox.bind("<Leave>", self._on_leave)
-
-        if platform.system() == "Windows":
-            self.__ListBox.bind("<MouseWheel>", self._on_mousewheel)
-            self.__ListBox.bind("<Shift-MouseWheel>", self._on_shift_mousewheel)
-        elif platform.system() == "Linux":
-            self.__ListBox.bind("<Button-4>",self._on_mousewheel)
-            self.__ListBox.bind("<Button-5>",self._on_mousewheel)
-            self.__ListBox.bind("<Shift-Button-4>",self._on_shift_mousewheel)
-            self.__ListBox.bind("<Shift-Button-5>",self._on_shift_mousewheel)        
-
+        self._build()        
         Frame.pack(self,**kwargs)
+
+    def scrollregion_change(self, event=None):
+        verticalBounds = self.__VScroll.get()
+        horizontalBounds = self.__HScroll.get()
+        if verticalBounds == (0.0, 1.0):
+            if self.__VScroll.winfo_ismapped():
+                if self.__VScroll.winfo_manager() == "grid":
+                    self.__VScroll.grid_forget()
+        elif verticalBounds != (0.0, 1.0):
+            if self.__VScroll.winfo_ismapped() == False:
+                self.__VScroll.grid(row=self.__VScrollPos[0], column=self.__VScrollPos[1],sticky=N+S)
+
+        if horizontalBounds == (0.0, 1.0):
+            if self.__HScroll.winfo_ismapped():
+                if self.__HScroll.winfo_manager() == "grid":
+                    self.__HScroll.grid_forget()
+        elif horizontalBounds != (0.0, 1.0):
+            if self.__HScroll.winfo_ismapped() == False:
+                self.__HScroll.grid(row=self.__HScrollPos[0], column=self.__HScrollPos[1],sticky=E+W)
 
     # Signal callback methods ---------------------------------------------------------------#
 
@@ -231,14 +199,18 @@ class ScrollableListbox(Frame):
             event {tkinter event} -- tkinter mousewheel event
         """
         delta = event.delta
-        if platform.system() == "Linux":
-            if event.num == 5:
-                delta = -1
-            elif event.num == 4:
-                delta = 1
-            self.__ListBox.yview_scroll( int(-1 * delta), "units" )
-        else:       
-            self.__ListBox.yview_scroll( int(-1 * (event.delta/120)), "units" )
+        if self.__VScroll.get() != (0.0, 1.0):
+            if self.__VScroll.winfo_ismapped() == False:
+                self.__VScroll.grid(row=self.__VScrollPos[0], column=self.__VScrollPos[1],sticky=N+S)
+            
+            if platform.system() == "Linux":
+                if event.num == 5:
+                    delta = -1
+                elif event.num == 4:
+                    delta = 1
+                self.__ListBox.yview_scroll( int(-1 * delta), "units" )
+            else:       
+                self.__ListBox.yview_scroll( int(-1 * (event.delta/120)), "units" )
 
     def _on_shift_mousewheel(self,event):
         """Signal catcher for shift mousewheel event
@@ -247,14 +219,18 @@ class ScrollableListbox(Frame):
             event {tkinter event} -- tkinter shift mousewheel event
         """
         delta = event.delta
-        if platform.system() == "Linux":
-            if event.num == 5:
-                delta = -1
-            elif event.num == 4:
-                delta = 1
-            self.__ListBox.xview_scroll( int(-1 * delta), "units" )
-        else:       
-            self.__ListBox.xview_scroll( int(-1 * (event.delta/120)), "units" )
+        if self.__HScroll.get() != (0.0, 1.0):
+            if self.__HScroll.winfo_ismapped() == False:
+                self.__HScroll.grid(row=self.__HScrollPos[0], column=self.__HScrollPos[1],sticky=E+W)
+
+            if platform.system() == "Linux":
+                if event.num == 5:
+                    delta = -1
+                elif event.num == 4:
+                    delta = 1
+                self.__ListBox.xview_scroll( int(-1 * delta), "units" )
+            else:       
+                self.__ListBox.xview_scroll( int(-1 * (event.delta/120)), "units" )
 
 
     def _on_select(self, event):

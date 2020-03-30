@@ -16,9 +16,30 @@ try:
     from DynamicCanvas import DynamicCanvas
 except:
     from tk.DynamicCanvas import DynamicCanvas
+try:
+    from tkinter import Tk, Frame, Canvas, Scrollbar, LEFT, RIGHT, TOP, BOTTOM, X, Y, BOTH, N, W, S, E, Label, Grid, Button, NONE
+    from tkinter.ttk import Scrollbar
+except:
+    from Tkinter import Tk, Frame, Canvas, Scrollbar, LEFT, RIGHT, TOP, BOTTOM, X, Y, BOTH, N, W, S, E, Label, Grid, Button, NONE
+    from Tkinter.ttk import  Scrollbar
 #from tkinter.ttk import *
 
-import platform
+import platform, logging, os
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter("%(asctime)s:%(name)s -- %(message)s")
+
+log_file = "logs/" + __name__ + "z"
+os.makedirs(os.path.dirname( log_file ), exist_ok=True)
+
+file_handler = logging.FileHandler(log_file)
+file_handler.setLevel(logging.WARNING)
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+
 
 class ScrollableFrame(Frame):
     
@@ -106,6 +127,7 @@ class ScrollableFrame(Frame):
                                     window=self.__ScrollFrame, 
                                     anchor="c")
 
+
     def pack(self, **kwargs): 
         self._build()
         Frame.pack(self, **kwargs)
@@ -177,32 +199,40 @@ class ScrollableFrame(Frame):
             
     def __on_mousewheel(self,event):
         delta = event.delta
-        if platform.system() == "Linux":
-            if event.num == 5:
-                delta = -1
-            elif event.num == 4:
-                delta = 1
-            self.__Canvas.yview_scroll( int(-1 * delta), "units" )
-        else:       
-            self.__Canvas.yview_scroll( int(-1 * (event.delta/120)), "units" )
+        if self.__VScroll.get() != (0.0, 1.0):
+            if platform.system() == "Linux":
+                if event.num == 5:
+                    delta = -1
+                elif event.num == 4:
+                    delta = 1
+                self.__Canvas.yview_scroll( int(-1 * delta), "units" )
+            else:       
+                self.__Canvas.yview_scroll( int(-1 * (event.delta/120)), "units" )
 
     def __on_shift_mousewheel(self,event):
         delta = event.delta
-        if platform.system() == "Linux":
-            if event.num == 5:
-                delta = -1
-            elif event.num == 4:
-                delta = 1
-            self.__Canvas.xview_scroll( int(-1 * delta), "units" )
-        else:       
-            self.__Canvas.xview_scroll( int(-1 * (event.delta/120)), "units" )
+        if self.__HScroll.get() != (0.0, 1.0):
+            if platform.system() == "Linux":
+                if event.num == 5:
+                    delta = -1
+                elif event.num == 4:
+                    delta = 1
+                self.__Canvas.xview_scroll( int(-1 * delta), "units" )
+            else:       
+                self.__Canvas.xview_scroll( int(-1 * (event.delta/120)), "units" )
+
 
 if __name__ == "__main__":
     main = Tk()
     main.minsize(30,30)
-    test = ScrollableFrame(master=main)
+    test = ScrollableFrame(master=main, anchor="nw",fill=X)
+    print(test)
     test.pack(side=LEFT,fill=BOTH, expand=1)
     
     for i in range(10):
-        Label(master=test.get_attach_point(), text=str(i)).pack(side=TOP)#.grid(row=i, column=i)
+        label = Label(master=test.get_attach_point(), text=str(i))
+        label["bg"] = "red"
+        label.grid(row=i, column=i, sticky=E+W)
+        test.grid_columnconfigure(i, weight=1)
+        
     main.mainloop()

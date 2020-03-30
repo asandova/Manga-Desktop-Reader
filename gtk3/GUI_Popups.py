@@ -19,7 +19,7 @@ class About_Popup(gtk.AboutDialog):
     def __init__(self, *args, **kwargs):
         gtk.AboutDialog.__init__(self,*args, **kwargs)
         self.set_program_name("Manga Desktop Reader")
-        self.set_version("verison 0.2b")
+        self.set_version("verison 0.4b")
         self.set_copyright("Copyright (c) 2019 August B. Sandoval")
         self.set_comments("NOTICE:\nAll Manga/Comics viewed within this program belong to their respective owner(s).")
         self.set_website_label("Source Code")
