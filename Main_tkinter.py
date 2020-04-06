@@ -19,6 +19,8 @@ from src.Chapter import Chapter
 
 def main():
     #config = {}
+    MainWindow._load_config()
+    """
     if os.path.exists("config.json") == True:
         with open("config.json",'r') as f:
             config_string = f.read()
@@ -32,6 +34,7 @@ def main():
         MainWindow.appConfig["Browser Version"] = "2.45"
         MainWindow.appConfig["Browser"] = "Chrome"
         MainWindow.appConfig["Search Location(s)"] = []
+    """
 
     if os.path.isdir(MainWindow.appConfig["Default Download Location"]) == False:
         os.makedirs( MainWindow.appConfig["Default Download Location"] )
@@ -50,7 +53,7 @@ def main():
     elif platform.system() == "Linux":
         Chapter.Driver_path += "_Linux"
     TitleSource.set_default_save_location(MainWindow.appConfig["Default Download Location"])
-    main = MainWindow( UI_Template=MainWindow.appConfig["UI"]["Main"], title="Manga Reader" )
+    main = MainWindow( UI_Template=MainWindow.appConfig["UI"]["Main"], title="Manga Reader", theme=MainWindow.appConfig["tktheme"] )
 
     main.mainloop()
 

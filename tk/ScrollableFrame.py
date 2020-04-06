@@ -43,12 +43,13 @@ logger.addHandler(file_handler)
 
 class ScrollableFrame(Frame):
     
-    def __init__(self, master, vscrollside="right", hscrollside="bottom", *args, **kwargs):
+    def __init__(self, master, vscrollside="right", hscrollside="bottom", anchor="c",*args, **kwargs):
         Frame.__init__(self, master=master, *args, **kwargs)
         self.__ScrollFrame = None
         self.__VScroll = None
         self.__HScroll = None
         self.__Canvas = None
+        self.__Anchor = anchor
         #initializes internal widgets
 
         #position arrays, stores the position for all widgets withing the parent frames grid
@@ -106,27 +107,36 @@ class ScrollableFrame(Frame):
                                         yscrollcommand = self.__VScroll.set,
                                         xscrollcommand = self.__HScroll.set)
         self.__ScrollFrame = Frame(master=self.__Canvas)
-        self.__VScroll.config(command = self.__Canvas.yview)
-        self.__HScroll.config(command = self.__Canvas.xview)
-
+        
         Grid.rowconfigure(self, self.__CanvasPos[0], weight=1)
         Grid.columnconfigure(self,self.__CanvasPos[1],weight=1)
 
-        if self.__HScroll.get() != (0.0, 1.0):
-            self.__HScroll.grid(row=self.__HScrollPos[0], column=self.__HScrollPos[1],sticky=E+W)
-        if self.__VScroll.get() != (0.0, 1.0):
-            self.__VScroll.grid(row=self.__VScrollPos[0], column=self.__VScrollPos[1],sticky=N+S)
-
         self.__Canvas.grid(row=self.__CanvasPos[0], column=self.__CanvasPos[1],sticky=N+S+E+W)
-        self.__ScrollFrame.bind("<Configure>", self.scrollregion_change)
 
-        self.__Canvas.configure(yscrollcommand=self.__VScroll.set, xscrollcommand=self.__HScroll.set)
-        self.__Canvas.configure(scrollregion=self.__Canvas.bbox("all"))
-        self.__Canvas.create_window(self.__Canvas.width/2 + self.__ScrollFrame["width"] / 2 ,
-                                    self.__Canvas.height/2 + self.__ScrollFrame["height"] / 2,
+        placement_x = None
+        placement_y = None
+        if "n" in self.__Anchor:
+            placement_y = 0
+        if "w" in self.__Anchor:
+            placement_x = 0
+        else:
+            placement_x = self.__Canvas.width/2 + self.__ScrollFrame["width"] / 2 
+            placement_y = self.__Canvas.height/2 + self.__ScrollFrame["height"] / 2
+
+        self.__Canvas.create_window(placement_x ,
+                                    placement_y,
                                     window=self.__ScrollFrame, 
-                                    anchor="c")
+                                    anchor=self.__Anchor)
 
+        self.__Canvas.configure(scrollregion=self.__Canvas.bbox("all"))
+        self.__Canvas.configure(yscrollcommand=self.__VScroll.set, xscrollcommand=self.__HScroll.set)
+
+        self.__VScroll.config(command = self.__Canvas.yview)
+        self.__HScroll.config(command = self.__Canvas.xview)
+        self.__HScroll.grid(row=self.__HScrollPos[0], column=self.__HScrollPos[1], sticky=E+W)
+        self.__VScroll.grid(row=self.__VScrollPos[0], column=self.__VScrollPos[1], sticky=N+S)
+
+        self.__ScrollFrame.bind("<Configure>", self.scrollregion_change)
 
     def pack(self, **kwargs): 
         self._build()
@@ -137,9 +147,11 @@ class ScrollableFrame(Frame):
         Frame.grid(self, **kwargs)
 
     def scrollregion_change(self,event):
+        self.__ScrollFrame.unbind("<Configure>")
         self.__Canvas.configure(
             scrollregion=self.__Canvas.bbox("all")
         )
+
         verticalBounds = self.__VScroll.get()
         horizontalBounds = self.__HScroll.get()
         if verticalBounds == (0.0, 1.0):
@@ -157,6 +169,8 @@ class ScrollableFrame(Frame):
         elif horizontalBounds != (0.0, 1.0):
             if self.__HScroll.winfo_ismapped() == False:
                 self.__HScroll.grid(row=self.__HScrollPos[0], column=self.__HScrollPos[1],sticky=E+W)
+
+        self.__ScrollFrame.bind("<Configure>", self.scrollregion_change)
 
     def get_attach_point(self):
         """returns a tkinter widget reference for attaching other widgets to this frame

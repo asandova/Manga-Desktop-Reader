@@ -47,6 +47,8 @@ class TitlePlugin(TitleSource):
 
     _supported_domains = ["mangapark.net","https://mangapark.net"]
 
+    description = "Allows for extraction of titles from MangaPark.net"
+
     def __init__(self):
         TitleSource.__init__(self)
         self.site_name = "Manga Park"
@@ -56,7 +58,8 @@ class TitlePlugin(TitleSource):
         self.site_domain = dictionary["Site Domain"]
         self.manga_extention = dictionary["Manga Extention"]
         self.Title = dictionary["Title"]
-        self.directory = self.Title.replace(' ', '_')
+        self.directory = re.sub(TitlePlugin.replace_illegal_character_pattern, "-", self.Title)
+        self.directory = re.sub(TitlePlugin.replace_space, "_", self.directory)
         self.summary = dictionary["Summary"] 
         self.authors = dictionary["Author(s)"] 
         self.artists = dictionary["Artist(s)"]
@@ -141,7 +144,8 @@ class TitlePlugin(TitleSource):
 
     def _extract_title(self):
         self.Title = self.site_html.find('div', class_="pb-1 mb-2 line-b-f hd").h2.a.text
-        self.directory = self.Title.replace(' ', '_')
+        self.directory = re.sub(TitlePlugin.replace_illegal_character_pattern, "-", self.Title)
+        self.directory = re.sub(TitlePlugin.replace_space, "_", self.directory)
 
     def _extract_summary(self):
         s = self.site_html.find('p', class_='summary').text

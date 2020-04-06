@@ -38,6 +38,8 @@ class TitlePlugin(TitleSource):
 
     _supported_domains = ["mangawindow.net"]
 
+    description = "Allows for extraction of titles from MangaWindow.net"
+
     def __init__(self):
         TitleSource.__init__(self)
         self.site_name = "Manga Window"
@@ -64,12 +66,16 @@ class TitlePlugin(TitleSource):
 
     def _extract_title(self):
         self.Title = self.site_html.find('h3', class_="item-title").a.text
-        self.directory = self.Title.replace(' ', '_')
+        self.directory = re.sub(TitlePlugin.replace_illegal_character_pattern, "-", self.Title)
+        self.directory = re.sub(TitlePlugin.replace_space, "_", self.directory)
 
     def _extract_summary(self):
         container = self.site_html.find("div", class_="col-24 col-sm-16 col-md-18 mt-4 mt-sm-0 attr-main")
-        s = self.site_html.find('pre').text
-        self.summary = s
+        summary = self.site_html.find('pre')
+        if summary != None:
+            self.summary = summary.text
+        else:
+            self.summary = "N/A"
 
     def _extract_title_info(self):
         container = self.site_html.find("div", class_="col-24 col-sm-16 col-md-18 mt-4 mt-sm-0 attr-main")
@@ -224,9 +230,6 @@ class ChapterPlugin(Chapter):
                             jpeg_name = page_name + num +'.jpeg'
                             Chapter.__convert_webp_to_jpeg( infile=save_path+filename, outfile=save_path+jpeg_name )
                             os.remove(save_path+filename)
-                            self.pages[int(num)] = jpeg_name
-                        else:
-                            self.pages[int(num)] = filename
                 save_path = save_location+'/'
                 zip_name = self.get_full_title() +".zip"
                 zip_file = ZipFile( save_path+zip_name ,'w')

@@ -25,7 +25,7 @@ class ScrollableListbox(Frame):
         Frame.__init__(self, master=master, *args, **kwargs)
         self.mode = selectmode
         self.command = command
-        self.__TitleList = []
+        self.__EntryList = []
         self.__HScroll= None
         self.__VScroll = None
         self.__ListBox = None
@@ -68,26 +68,33 @@ class ScrollableListbox(Frame):
         self.__ListBox.insert(position, title)
         self.scrollregion_change()
 
-    def delete(self, title):
+    def delete(self, entry):
         """Removes the title from from the listbox
         
         Arguments:
-            title {string} -- the title to be removed
+            title {string or int} -- the title to be removed
         
         Returns:
             bool -- returns 1 if title is not in list, else 0
         """
-        for i in range(0, len(self.__TitleList)):
-            if self.__TitleList[i] == title:
-                self.__TitleList.remove(title)
-                self.__ListBox.delete(i)
-                return 0
+        if type(entry) == str:
+            for i in range(0, len(self.__EntryList)):
+                if self.__EntryList[i] == entry:
+                    self.__EntryList.remove(entry)
+                    self.__ListBox.delete(i)
+                    return 0
+        elif type(entry) == int:
+            self.__EntryList.remove(self.__EntryList[entry])
+            self.__ListBox.delete(entry)
         return 1
-        
+
+    def get_list(self):
+        return self.__EntryList
+
     def remove_all(self):
         """Removes all entries in the list
         """
-        self.__TitleList = []
+        self.__EntryList = []
         self.__ListBox.delete(0,self.__ListBox.size())
 
     def __find_insertion_point(self, text):
@@ -99,7 +106,7 @@ class ScrollableListbox(Frame):
         Returns:
             int -- index the title should be placed, -1 is end of list
         """
-        l = self.__TitleList
+        l = self.__EntryList
         l.append(text)
         l.sort()
         for i in range(0, len(l)):
@@ -239,10 +246,11 @@ class ScrollableListbox(Frame):
         Arguments:
             event {tkinter event} -- tkinter listbox selection event
         """
-        if len(self.__ListBox.curselection()) > 0:
-            index = int(self.__ListBox.curselection()[0])
-            value = self.__ListBox.get(index)
-            self.command( (index, value) )
+        if self.command != None:
+            if len(self.__ListBox.curselection()) > 0:
+                index = int(self.__ListBox.curselection()[0])
+                value = self.__ListBox.get(index)
+                self.command( (index, value) )
 
 if __name__ == "__main__":
     main = Tk()

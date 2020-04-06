@@ -36,7 +36,7 @@ from src.controller import control
 from tk.ScrollableListBox import ScrollableListbox
 from tk.ScrollableFrame import ScrollableFrame
 from tk.Viewer import Viewer
-from tk.popups import add_Window, about_dialog
+from tk.popups import add_Window, about_dialog, PreferenceWindow
 from tk.ChapterRow import ChapterRow
 
 logger = logging.getLogger(__name__)
@@ -71,6 +71,7 @@ class MainWindow(Tk, control):
             control.__init__(self)
             Tk.__init__(self ,*args, **kwargs)
             self.style = Style()
+            self.theme = theme
             self.style.theme_use(theme)
             self.Info = {
                 "Title"     : StringVar(),
@@ -105,6 +106,7 @@ class MainWindow(Tk, control):
         self.Widgets["Main Window"] = self.builder.get_object("MainWindow", master=self)
         self.Widgets["Menu"] = self.builder.get_object("Menu",master=self)
         self.Widgets["Add Command"] = self.builder.get_object("AddTitleCommand")
+        self.Widgets["Pref Command"] = self.builder.get_object("Preferences")
         self.Widgets["Quit Command"]= self.builder.get_object("QuitCommand")
         self.Widgets["Title Frame"] = self.builder.get_object("Titleframe")
         self.Widgets["Title List"] = None
@@ -157,6 +159,7 @@ class MainWindow(Tk, control):
 
         self.Widgets["Stream Select"].bind("<<ComboboxSelected>>",self._on_stream_change)
         self.Widgets["Stream Select"].insert(0, "Select Stream")
+        self.Widgets["Stream Select"].config(width=13)
         self.Widgets["Stream Select"]["state"] = "readonly"
         self.Widgets["Stream Select"]["font"] = self.Verdana_Normal_12
 
@@ -191,7 +194,7 @@ class MainWindow(Tk, control):
             lambda e:
                 self.Widgets["Search Entry"].bind("<Return>", self._on_search_change)
             )
-        
+
         self.Widgets["Main Window"].pack(fill=BOTH,expand=1)
         self.Widgets["Title List"] = ScrollableListbox(master=self.Widgets["Title Frame"], command=self._on_list_select)
         Grid.grid_rowconfigure(self.Widgets["Title Frame"], 0, weight=0)
@@ -376,6 +379,7 @@ class MainWindow(Tk, control):
     
     def _on_quit(self):
         self._export_title_list_to_file()
+        self._export_config()
         if self.threads["Title"] != None:
             result = messagebox.askyesno("Active Download", "Do you want to wait title to download?")
             if result == False:
@@ -448,8 +452,12 @@ class MainWindow(Tk, control):
         self._update_location_controls()
         self._update_chapter_list(length=self.chapter_per_page, offset=self.page_location["current"])
 
+    def _on_pref(self, event=None):
+        self.Widgets["Preference Window"] = PreferenceWindow(master=self)
+
     def _on_remove(self):
         self.Widgets["InfoFrame"].grid_forget()
+        self.Info["Source Name"].set("")
         title_to_delete = self.Title_Dict[self.selection["Title"].get_title()]
 
         location = title_to_delete.save_location +'/' + title_to_delete.directory

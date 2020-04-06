@@ -45,6 +45,9 @@ class TitleSource(ABC):
     hide_cache_file = False
 
     default_save_location = '.'
+    replace_illegal_character_pattern = re.compile( "[/<>:\"\\\?\*\|]" )
+    replace_space = re.compile(" ")
+
 
     def __init__(self):
         """TitleSource Constructor.
@@ -55,7 +58,9 @@ class TitleSource(ABC):
         self.manga_extention = ""
         self.save_location = TitleSource.default_save_location
         self.Title = ""
-        self.directory = self.Title.replace(' ', '_')
+        self.directory = re.sub(TitleSource.replace_illegal_character_pattern, "-", self.Title)
+        self.directory = re.sub(TitleSource.replace_space, "_", self.directory)
+        #self.directory = self.Title.replace(' ', '_')
         if self.directory != "":
             self.save_location += '/' + self.directory
         self.authors = []

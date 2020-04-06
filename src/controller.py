@@ -67,14 +67,6 @@ class control():
             self.PluginManager.discover_sources()
 
     def in_chapter_queue(self, hash_id):
-        #if self._current_task["Chapter"] != None:
-        #    title = self._current_task["Chapter"][0]
-        #    stream = self._current_task["Chapter"][1]
-        #    chapter = self._current_task["Chapter"][2]
-        #    current_id = hash( ( title, stream, chapter) )
-        #    if hash_id == current_id:
-        #        return True
-
         for i in self.ChapterQueue:
             if i[4] == hash_id:
                 return True
@@ -141,6 +133,28 @@ class control():
         with open(self.appConfig["Cashe Save Location"] +'/'+ export_file, 'w') as f:
             f.write(json.dumps(dic, separators=(",", " : "), indent=4))
             f.close()
+
+    @staticmethod
+    def _load_config( config_file="config.json"):
+        if os.path.exists( config_file) == True:
+            with open(config_file, "r") as f:
+                config_string = f.read()
+                control.appConfig = json.loads(config_string)
+        else:
+            control.appConfig["Hide Cache Files"] = True
+            control.appConfig["Hide Download Directory"] = False
+            control.appConfig["Cashe Save Location"] = "."
+            control.appConfig["Default Download Location"] = "./Manga"
+            control.appConfig["tktheme"] = "clam"
+            control.appConfig["Webdriver Location"] = "./WebDrivers"
+            control.appConfig["Browser Version"] = "2.45"
+            control.appConfig["Browser"] = "Chrome"
+            control.appConfig["Search Location(s)"] = []
+
+    @staticmethod
+    def _export_config( config_file="config.json"):
+        with open(config_file, "w") as f:
+            f.write( json.dumps( control.appConfig, separators=(",", " : "), indent=4 ) )
 
     def _load_title_entry(self):
         pass
