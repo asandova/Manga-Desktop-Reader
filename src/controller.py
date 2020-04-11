@@ -103,17 +103,18 @@ class control():
 
         print("Searching for untracked Manga")
         for search in control.appConfig["Search Location(s)"]:
-            dirs = os.listdir(search)
-            for d in dirs:
-                path = search + '/'+ d + "/" + d + '.json'
-                _d = d.replace('_', ' ')
-                if os.path.isfile(path) == True and self.Title_Dict.get(_d) == None:
-                    title_object = self.read_title_cache( path )
-                    if title_object != None:
-                        if self.Title_Dict.get(title_object.get_title()) == None:
-                            self.search_locations.add(search)
-                            print("Discovered: " + title_object.get_title() + " in " + search)
-                            self.Title_Dict[title_object.get_title()] = title_object
+            if os.path.isdir(search) == True:
+                dirs = os.listdir(search)
+                for d in dirs:
+                    path = search + '/'+ d + "/" + d + '.json'
+                    _d = d.replace('_', ' ')
+                    if os.path.isfile(path) == True and self.Title_Dict.get(_d) == None:
+                        title_object = self.read_title_cache( path )
+                        if title_object != None:
+                            if self.Title_Dict.get(title_object.get_title()) == None:
+                                self.search_locations.add(search)
+                                print("Discovered: " + title_object.get_title() + " in " + search)
+                                self.Title_Dict[title_object.get_title()] = title_object
 
     def _export_title_list_to_file(self, export_file="tracking_list.json"):
         if self.appConfig['Hide Cache Files']== True:

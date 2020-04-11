@@ -185,12 +185,14 @@ class PreferenceWindow(Toplevel):
         self.Widgets["Driver Label"] = Label(master=self.Widgets["Driver Location Frame"], text="Driver Location", font=PreferenceWindow.Verdana_Normal_12)
         self.Widgets["Driver Entry"] = Entry(master=self.Widgets["Driver Location Frame"], font=PreferenceWindow.Verdana_Normal_12)
         self.Widgets["Driver Entry"].insert(END, self.Info["Driver Loc"].get())
-        self.Widgets["Driver Button"] = Button(master=self.Widgets["Driver Location Frame"], text="Browse", width=8)
+        self.Widgets["Driver Select"] = Button(master=self.Widgets["Driver Location Frame"], text="Set", width=6, command=self._on_driver_enter)
+        self.Widgets["Driver Button"] = Button(master=self.Widgets["Driver Location Frame"], text="Browse", width=8, command=self._on_driver_browse)
 
         self.Widgets["Driver Location Frame"].pack(side=TOP, fill=X, expand=0)
         self.Widgets["Driver Label"].grid( row=0, column=0, sticky=W )
         self.Widgets["Driver Entry"].grid( row=0, column=1, sticky=E+W )
-        self.Widgets["Driver Button"].grid( row=0, column=2, sticky=E, padx=5 )
+        self.Widgets["Driver Select"].grid( row=0, column=2, sticky=E+W )
+        self.Widgets["Driver Button"].grid( row=0, column=3, sticky=E, padx=5 )
 
         self.update_driver_list()
 
@@ -217,8 +219,15 @@ class PreferenceWindow(Toplevel):
 
     def update_driver_list(self):
         driver_location = self.parent.appConfig["Webdriver Location"]
-        browsers = os.listdir(driver_location)
+        if len( self.Drivers ) != 0:
+            for d in self.Drivers:
+                d.pack_forget()
+            self.Drivers = []
         drivers = {}
+        if os.path.exists(driver_location) == False:
+            return
+        browsers = os.listdir(driver_location)
+        
         for b in browsers:
             print(b)
             if b.lower() == "chrome":
@@ -261,6 +270,11 @@ class PreferenceWindow(Toplevel):
         self.parent.appConfig["Search Location(s)"] = self.Widgets["SL List"].get_list()
         self.destroy()
 
+    def _on_driver_enter(self, event=None):
+        directory = self.Widgets["Driver Entry"].get()
+        self.parent.appConfig["Webdriver Location"] = directory
+        self.update_driver_list()
+
     def _on_driver_select(self, data=None):
         for d in self.Drivers:
             if d.browser_name == data:
@@ -272,6 +286,14 @@ class PreferenceWindow(Toplevel):
                     return
             else:
                 d.set_active(True) 
+
+    def _on_driver_browse(self, data=None):
+        directory = filedialog.askdirectory(title="Choose driver directory")
+        if type( directory ) == str:
+            self.Widgets["Driver Entry"].delete(0, END)
+            self.Widgets["Driver Entry"].insert(0, directory)
+            self.parent.appConfig["Webdriver Location"] = directory
+            self.update_driver_list()
 
     def _on_dl_browse(self, event=None):
         directory = filedialog.askdirectory(title="Choose download directory")

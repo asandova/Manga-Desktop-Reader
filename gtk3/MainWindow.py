@@ -26,7 +26,7 @@ from src.TitleSource import TitleSource
 from gtk3.ChapterListRow import ChapterListBoxRow
 from gtk3.TitleListBoxRow import TitleListBoxRow
 from gtk3.Viewer import Viewer
-from gtk3.GUI_Popups import Error_Popup, Warning_Popup, Info_Popup, add_Popup, About_Popup, ask_Popup
+from gtk3.GUI_Popups import Error_Popup, Warning_Popup, Info_Popup, add_Popup, About_Popup, ask_Popup, Preference_Window
 
 class MainWindow( control, gtk.Window):
 
@@ -65,6 +65,7 @@ class MainWindow( control, gtk.Window):
         self.Widgets["Search Box"]        = self.builder.get_object("Manga_Title_Search")
         self.Widgets["Update Streams"]    = self.builder.get_object("Update_Streams_Button")
         self.Widgets["About"]             = self.builder.get_object("About_Menu_Button")
+        self.Widgets["Pref"]              = self.builder.get_object("Preferences_Menu_Button")
         self.Widgets["Link"]              = self.builder.get_object("Manga_Link")
         self.Widgets["Chapter Sort"]      = self.builder.get_object("Sort_Toggle")
         self.Widgets["Sort Image"]        = self.builder.get_object("sort_button_image")
@@ -79,6 +80,7 @@ class MainWindow( control, gtk.Window):
 
         self.signal_ids["Main Window"]         = self.Widgets["Main Window"].connect("delete-event", self._on_quit)
         self.signal_ids["Add Title"]           = self.Widgets["Add Title"].connect("activate",self._on_menu_add)
+        self.signal_ids["Pref"]           = self.Widgets["Pref"].connect("activate",self._on_pref)
         self.signal_ids["Update Streams"]      = self.Widgets["Update Streams"].connect("clicked",self._on_update)
         self.signal_ids["Beginning Button"]    = self.Widgets["Beginning Button"].connect("clicked", self._on_beginning)
         self.signal_ids["Prev Button"]         = self.Widgets["Prev Button"].connect("clicked", self._on_prev)
@@ -356,6 +358,9 @@ class MainWindow( control, gtk.Window):
             self._update_chapter_list(length=self.chapter_per_page, offset=self.page_location["current"])
         pass
 
+    def _on_pref(self, widget):
+        self.Pref_window = Preference_Window(self,"Preference_Window")
+
     def _on_prev(self, widget):
         super()._on_prev()
 
@@ -377,12 +382,14 @@ class MainWindow( control, gtk.Window):
                 if self.threads["Title"] != None:
                     self.threads["Title"].join()
                 self._export_title_list_to_file()
+                self._export_config()
                 self.update_status(False)
                 gtk.main_quit()
             
         else:
             self.update_status(True, "exporting Title List")
             self._export_title_list_to_file()
+            self._export_config()
             self.update_status(False)
             gtk.main_quit()
 

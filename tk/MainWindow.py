@@ -464,7 +464,7 @@ class MainWindow(Tk, control):
         
         if os.path.isdir(location) == True:
             shutil.rmtree(location)
-            del self.Title_Dict[self.selection["Title"].get_title()]
+            del self.Title_Dict[ self.selection["Title"].get_title() ]
             self.Widgets["Title List"].delete( self.selection["Title"].get_title() )
             self.selection["Title"] = None
             self.selection["stream"] = None

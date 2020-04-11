@@ -36,12 +36,21 @@
                     <property name="can_focus">False</property>
                     <child>
                       <object class="GtkImageMenuItem" id="Add_Manga_Menu_Button">
-                        <property name="label" translatable="yes">Add Manga (URL)</property>
+                        <property name="label" translatable="yes">Add Title (URL)</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_stock">False</property>
                         <property name="always_show_image">True</property>
                         <signal name="activate" handler="_on_menu_add" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="Preferences_Menu_Button">
+                        <property name="label" translatable="yes">Preferences</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_stock">False</property>
+                        <property name="always_show_image">True</property>
                       </object>
                     </child>
                     <child>
@@ -462,53 +471,6 @@
                                                     <property name="border_width">5</property>
                                                     <property name="layout_style">center</property>
                                                     <child>
-                                                      <object class="GtkButton" id="download_all_button">
-                                                        <property name="visible">True</property>
-                                                        <property name="can_focus">True</property>
-                                                        <property name="receives_default">True</property>
-                                                        <property name="halign">end</property>
-                                                        <property name="valign">start</property>
-                                                        <property name="hexpand">True</property>
-                                                        <child>
-                                                          <object class="GtkBox">
-                                                            <property name="visible">True</property>
-                                                            <property name="can_focus">False</property>
-                                                            <child>
-                                                            <object class="GtkImage">
-                                                            <property name="visible">True</property>
-                                                            <property name="can_focus">False</property>
-                                                            <property name="stock">gtk-save</property>
-                                                            </object>
-                                                            <packing>
-                                                            <property name="expand">False</property>
-                                                            <property name="fill">True</property>
-                                                            <property name="position">0</property>
-                                                            </packing>
-                                                            </child>
-                                                            <child>
-                                                            <object class="GtkLabel">
-                                                            <property name="visible">True</property>
-                                                            <property name="can_focus">False</property>
-                                                            <property name="label" translatable="yes">Download Steam</property>
-                                                            </object>
-                                                            <packing>
-                                                            <property name="expand">False</property>
-                                                            <property name="fill">True</property>
-                                                            <property name="position">1</property>
-                                                            </packing>
-                                                            </child>
-                                                          </object>
-                                                        </child>
-                                                      </object>
-                                                      <packing>
-                                                        <property name="expand">False</property>
-                                                        <property name="fill">True</property>
-                                                        <property name="pack_type">end</property>
-                                                        <property name="position">1</property>
-                                                        <property name="non_homogeneous">True</property>
-                                                      </packing>
-                                                    </child>
-                                                    <child>
                                                       <object class="GtkButton" id="Update_Streams_Button">
                                                         <property name="visible">True</property>
                                                         <property name="can_focus">True</property>
@@ -554,6 +516,53 @@
                                                         <property name="fill">True</property>
                                                         <property name="pack_type">end</property>
                                                         <property name="position">1</property>
+                                                      </packing>
+                                                    </child>
+                                                    <child>
+                                                      <object class="GtkButton" id="download_all_button">
+                                                        <property name="visible">True</property>
+                                                        <property name="can_focus">True</property>
+                                                        <property name="receives_default">True</property>
+                                                        <property name="halign">end</property>
+                                                        <property name="valign">start</property>
+                                                        <property name="hexpand">True</property>
+                                                        <child>
+                                                          <object class="GtkBox">
+                                                            <property name="visible">True</property>
+                                                            <property name="can_focus">False</property>
+                                                            <child>
+                                                            <object class="GtkImage">
+                                                            <property name="visible">True</property>
+                                                            <property name="can_focus">False</property>
+                                                            <property name="stock">gtk-save</property>
+                                                            </object>
+                                                            <packing>
+                                                            <property name="expand">False</property>
+                                                            <property name="fill">True</property>
+                                                            <property name="position">0</property>
+                                                            </packing>
+                                                            </child>
+                                                            <child>
+                                                            <object class="GtkLabel">
+                                                            <property name="visible">True</property>
+                                                            <property name="can_focus">False</property>
+                                                            <property name="label" translatable="yes">Download Steam</property>
+                                                            </object>
+                                                            <packing>
+                                                            <property name="expand">False</property>
+                                                            <property name="fill">True</property>
+                                                            <property name="position">1</property>
+                                                            </packing>
+                                                            </child>
+                                                          </object>
+                                                        </child>
+                                                      </object>
+                                                      <packing>
+                                                        <property name="expand">False</property>
+                                                        <property name="fill">True</property>
+                                                        <property name="pack_type">end</property>
+                                                        <property name="position">1</property>
+                                                        <property name="non_homogeneous">True</property>
                                                       </packing>
                                                     </child>
                                                     <child>
@@ -821,18 +830,6 @@
                                                 <property name="expand">False</property>
                                                 <property name="fill">True</property>
                                                 <property name="position">0</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkSeparator">
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="valign">start</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">2</property>
                                               </packing>
                                             </child>
                                             <child>

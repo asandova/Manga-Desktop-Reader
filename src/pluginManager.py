@@ -50,7 +50,6 @@ class Manager:
                         if isinstance( source, self.PluginParent ) == True:
                             logger.debug( "Discovered TitleSource plugin: " + fname )
                             self.titleSources[fname] = module
-                        print(module)
                     except Exception:
                         logger.exception("Import of plugin " + fname + " expreience exception")
                     except:

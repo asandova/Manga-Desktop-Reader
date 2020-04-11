@@ -86,6 +86,7 @@ class ScrollableListbox(Frame):
         elif type(entry) == int:
             self.__EntryList.remove(self.__EntryList[entry])
             self.__ListBox.delete(entry)
+            return 0
         return 1
 
     def get_list(self):
