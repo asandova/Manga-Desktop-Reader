@@ -150,7 +150,7 @@
                                     <property name="can_focus">False</property>
                                     <property name="orientation">vertical</property>
                                     <child>
-                                      <object class="GtkSearchEntry" id="Manga_Title_Search">
+                                      <object class="GtkSearchEntry" id="Title_Search">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="hexpand">True</property>
@@ -167,7 +167,7 @@
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkListBox" id="Manga_List">
+                                      <object class="GtkListBox" id="Title_List">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
                                       </object>
@@ -207,7 +207,7 @@
                             <property name="label_xalign">0.5</property>
                             <property name="shadow_type">none</property>
                             <child>
-                              <object class="GtkScrolledWindow" id="Manga_info_viewer">
+                              <object class="GtkScrolledWindow" id="Title_info_viewer">
                                 <property name="name">Manga_info_viewer</property>
                                 <property name="can_focus">True</property>
                                 <property name="hexpand">True</property>
@@ -233,7 +233,7 @@
                                             <property name="border_width">5</property>
                                             <property name="baseline_position">top</property>
                                             <child>
-                                              <object class="GtkImage" id="Manga_Cover_Image">
+                                              <object class="GtkImage" id="Cover_Image">
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">False</property>
                                                 <property name="halign">center</property>
@@ -259,7 +259,7 @@
                                                 <property name="spacing">2</property>
                                                 <property name="baseline_position">top</property>
                                                 <child>
-                                                  <object class="GtkLabel" id="Manga_Title_Label">
+                                                  <object class="GtkLabel" id="Title_Label">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
                                                     <property name="halign">start</property>
@@ -282,7 +282,7 @@
                                                   </packing>
                                                 </child>
                                                 <child>
-                                                  <object class="GtkLabel" id="Manga_Author_Label">
+                                                  <object class="GtkLabel" id="Author_Label">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
                                                     <property name="halign">start</property>
@@ -302,7 +302,7 @@
                                                   </packing>
                                                 </child>
                                                 <child>
-                                                  <object class="GtkLabel" id="Manga_Artist_label">
+                                                  <object class="GtkLabel" id="Artist_label">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
                                                     <property name="halign">start</property>
@@ -322,7 +322,7 @@
                                                   </packing>
                                                 </child>
                                                 <child>
-                                                  <object class="GtkLabel" id="Manga_Genre_Label">
+                                                  <object class="GtkLabel" id="Genre_Label">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
                                                     <property name="halign">start</property>
@@ -342,7 +342,7 @@
                                                   </packing>
                                                 </child>
                                                 <child>
-                                                  <object class="GtkLinkButton" id="Manga_Link">
+                                                  <object class="GtkLinkButton" id="Title_Link">
                                                     <property name="label" translatable="yes">button</property>
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
@@ -471,6 +471,53 @@
                                                     <property name="border_width">5</property>
                                                     <property name="layout_style">center</property>
                                                     <child>
+                                                      <object class="GtkButton" id="download_all_button">
+                                                        <property name="visible">True</property>
+                                                        <property name="can_focus">True</property>
+                                                        <property name="receives_default">True</property>
+                                                        <property name="halign">end</property>
+                                                        <property name="valign">start</property>
+                                                        <property name="hexpand">True</property>
+                                                        <child>
+                                                          <object class="GtkBox">
+                                                            <property name="visible">True</property>
+                                                            <property name="can_focus">False</property>
+                                                            <child>
+                                                            <object class="GtkImage">
+                                                            <property name="visible">True</property>
+                                                            <property name="can_focus">False</property>
+                                                            <property name="stock">gtk-save</property>
+                                                            </object>
+                                                            <packing>
+                                                            <property name="expand">False</property>
+                                                            <property name="fill">True</property>
+                                                            <property name="position">0</property>
+                                                            </packing>
+                                                            </child>
+                                                            <child>
+                                                            <object class="GtkLabel">
+                                                            <property name="visible">True</property>
+                                                            <property name="can_focus">False</property>
+                                                            <property name="label" translatable="yes">Download Steam</property>
+                                                            </object>
+                                                            <packing>
+                                                            <property name="expand">False</property>
+                                                            <property name="fill">True</property>
+                                                            <property name="position">1</property>
+                                                            </packing>
+                                                            </child>
+                                                          </object>
+                                                        </child>
+                                                      </object>
+                                                      <packing>
+                                                        <property name="expand">False</property>
+                                                        <property name="fill">True</property>
+                                                        <property name="pack_type">end</property>
+                                                        <property name="position">1</property>
+                                                        <property name="non_homogeneous">True</property>
+                                                      </packing>
+                                                    </child>
+                                                    <child>
                                                       <object class="GtkButton" id="Update_Streams_Button">
                                                         <property name="visible">True</property>
                                                         <property name="can_focus">True</property>
@@ -516,53 +563,6 @@
                                                         <property name="fill">True</property>
                                                         <property name="pack_type">end</property>
                                                         <property name="position">1</property>
-                                                      </packing>
-                                                    </child>
-                                                    <child>
-                                                      <object class="GtkButton" id="download_all_button">
-                                                        <property name="visible">True</property>
-                                                        <property name="can_focus">True</property>
-                                                        <property name="receives_default">True</property>
-                                                        <property name="halign">end</property>
-                                                        <property name="valign">start</property>
-                                                        <property name="hexpand">True</property>
-                                                        <child>
-                                                          <object class="GtkBox">
-                                                            <property name="visible">True</property>
-                                                            <property name="can_focus">False</property>
-                                                            <child>
-                                                            <object class="GtkImage">
-                                                            <property name="visible">True</property>
-                                                            <property name="can_focus">False</property>
-                                                            <property name="stock">gtk-save</property>
-                                                            </object>
-                                                            <packing>
-                                                            <property name="expand">False</property>
-                                                            <property name="fill">True</property>
-                                                            <property name="position">0</property>
-                                                            </packing>
-                                                            </child>
-                                                            <child>
-                                                            <object class="GtkLabel">
-                                                            <property name="visible">True</property>
-                                                            <property name="can_focus">False</property>
-                                                            <property name="label" translatable="yes">Download Steam</property>
-                                                            </object>
-                                                            <packing>
-                                                            <property name="expand">False</property>
-                                                            <property name="fill">True</property>
-                                                            <property name="position">1</property>
-                                                            </packing>
-                                                            </child>
-                                                          </object>
-                                                        </child>
-                                                      </object>
-                                                      <packing>
-                                                        <property name="expand">False</property>
-                                                        <property name="fill">True</property>
-                                                        <property name="pack_type">end</property>
-                                                        <property name="position">1</property>
-                                                        <property name="non_homogeneous">True</property>
                                                       </packing>
                                                     </child>
                                                     <child>
@@ -862,7 +862,7 @@
                               </object>
                             </child>
                             <child type="label">
-                              <object class="GtkLabel" id="Manga_Source_Title">
+                              <object class="GtkLabel" id="Source_Title">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="halign">center</property>

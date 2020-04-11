@@ -21,19 +21,8 @@ from src.Chapter import Chapter
 import os, platform, json
 
 def main():
-    if os.path.exists("config.json") == True:
-        with open("config.json",'r') as f:
-            config_string = f.read()
-            MainWindow.set_config_dict(json.loads(config_string)) 
-    else:
-        MainWindow.set_config("Hide Cache Files", True)
-        MainWindow.set_config("Hide Download Directory",False)
-        MainWindow.set_config("Cashe Save Location",".")
-        MainWindow.set_config("Default Download Location","./Manga")
-        MainWindow.set_config("Webdriver Location","./WebDrivers")
-        MainWindow.set_config("Browser Version","2.45")
-        MainWindow.set_config("Browser","Chrome")
-        MainWindow.set_config("Search Location(s)", [])
+    MainWindow._load_config()
+
         
     appConfig = MainWindow.get_config()
 
@@ -51,11 +40,8 @@ def main():
         Chapter.Driver_path += ".exe"
     elif platform.system() == "Linux":
         Chapter.Driver_path += "_Linux"
-    #elif platform.system() == "MacOS":
-    #    Chapter.Driver_path += "_mac"
     TitleSource.set_default_save_location(appConfig["Default Download Location"])
     main = MainWindow(appConfig["UI"]["Main"], "Manga_Reader_Viewer_window.glade", "Manga_Reader_add_manga_dialog.glade")
-    #main = Main(config["UI"]["Main"], "Manga_Reader_Viewer_window.glade", "Manga_Reader_add_manga_dialog.glade")
     gtk.main()
 
 if __name__ == '__main__':

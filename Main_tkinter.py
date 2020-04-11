@@ -18,23 +18,7 @@ from src.TitleSource import TitleSource
 from src.Chapter import Chapter
 
 def main():
-    #config = {}
     MainWindow._load_config()
-    """
-    if os.path.exists("config.json") == True:
-        with open("config.json",'r') as f:
-            config_string = f.read()
-            MainWindow.appConfig = json.loads(config_string)
-    else:
-        MainWindow.appConfig["Hide Cache Files"] = True
-        MainWindow.appConfig["Hide Download Directory"] = False
-        MainWindow.appConfig["Cashe Save Location"] = "."
-        MainWindow.appConfig["Default Download Location"] = "./Manga"
-        MainWindow.appConfig["Webdriver Location"] = "./WebDrivers"
-        MainWindow.appConfig["Browser Version"] = "2.45"
-        MainWindow.appConfig["Browser"] = "Chrome"
-        MainWindow.appConfig["Search Location(s)"] = []
-    """
 
     if os.path.isdir(MainWindow.appConfig["Default Download Location"]) == False:
         os.makedirs( MainWindow.appConfig["Default Download Location"] )
@@ -47,7 +31,6 @@ def main():
         Chapter.Driver_path += "chromedriver"
     elif Chapter.Driver_type == "Firefox":
         Chapter.Driver_path += "geckodriver"
-    #print(Chapter.Driver_path)
     if platform.system() == "Windows":
         Chapter.Driver_path += ".exe"
     elif platform.system() == "Linux":

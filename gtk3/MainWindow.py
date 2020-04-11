@@ -45,34 +45,36 @@ class MainWindow( control, gtk.Window):
 
         self.Widgets["Main Window"]       = self.builder.get_object("Main_Window")
         self.Widgets["Chapter Viewer"]    = None
-        self.Widgets["Info Viewer"]       = self.builder.get_object("Manga_info_viewer")
+        self.Widgets["Info Viewer"]       = self.builder.get_object("Title_info_viewer")
         self.Widgets["Status Spinner"]    = self.builder.get_object("Status_Spinner")
         self.Widgets["Status Label"]      = self.builder.get_object("Status_Label")
-        self.Widgets["Title Label"]       = self.builder.get_object("Manga_Title_Label" )
-        self.Widgets["Authors Label"]     = self.builder.get_object("Manga_Author_Label")
-        self.Widgets["Artists Label"]     = self.builder.get_object("Manga_Artist_label")
-        self.Widgets["Genre Label"]       = self.builder.get_object("Manga_Genre_Label")
+        self.Widgets["Title Label"]       = self.builder.get_object("Title_Label" )
+        self.Widgets["Authors Label"]     = self.builder.get_object("Author_Label")
+        self.Widgets["Artists Label"]     = self.builder.get_object("Artist_label")
+        self.Widgets["Genre Label"]       = self.builder.get_object("Genre_Label")
         self.Widgets["Summary Label"]     = self.builder.get_object("Summary_Data_Label")
+        self.Widgets["Source Title"]      = self.builder.get_object("Source_Title")
         self.Widgets["Stream Select"]     = self.builder.get_object("Stream_Combo_Box")
         self.Widgets["Beginning Button"]  = self.builder.get_object("BeginingButton")
         self.Widgets["Prev Button"]       = self.builder.get_object("PrevButton")
         self.Widgets["Location Select"]   = self.builder.get_object("Location")
         self.Widgets["Next Button"]       = self.builder.get_object("NextButton")
         self.Widgets["End Button"]        = self.builder.get_object("EndButton")
-        self.Widgets["Cover"]             = self.builder.get_object("Manga_Cover_Image")
+        self.Widgets["Cover"]             = self.builder.get_object("Cover_Image")
         self.Widgets["Chapter List Box"]  = self.builder.get_object("Chapter_List")
-        self.Widgets["Title List"]        = self.builder.get_object("Manga_List")
-        self.Widgets["Search Box"]        = self.builder.get_object("Manga_Title_Search")
+        self.Widgets["Title List"]        = self.builder.get_object("Title_List")
+        self.Widgets["Search Box"]        = self.builder.get_object("Title_Search")
         self.Widgets["Update Streams"]    = self.builder.get_object("Update_Streams_Button")
         self.Widgets["About"]             = self.builder.get_object("About_Menu_Button")
         self.Widgets["Pref"]              = self.builder.get_object("Preferences_Menu_Button")
-        self.Widgets["Link"]              = self.builder.get_object("Manga_Link")
+        self.Widgets["Link"]              = self.builder.get_object("Title_Link")
         self.Widgets["Chapter Sort"]      = self.builder.get_object("Sort_Toggle")
         self.Widgets["Sort Image"]        = self.builder.get_object("sort_button_image")
         self.Widgets["Download all chapters Button"]  = self.builder.get_object("download_all_button")
         self.Widgets["Add Title"]                     = self.builder.get_object("Add_Manga_Menu_Button")
         self.Widgets["Title Buttons"] = {}
 
+        self.Widgets["Source Title"].set_text(" ")
         self.Widgets["Download all chapters Button"].set_sensitive(True)
         self.Widgets["Download all chapters Button"].set_tooltip_text("Download all chapters in current stream list")
         self.Widgets["Sort Image"].set_from_icon_name("gtk-sort-descending", 1)
@@ -182,7 +184,6 @@ class MainWindow( control, gtk.Window):
         self.Widgets["Location Select"].remove_all()
         super()._update_location_bounds()
 
-        
         for i in range(1, self.page_location["end"]+1) :
             self.Widgets["Location Select"].append_text( str(i) +"/"+str( self.page_location["end"]) )
 
@@ -245,6 +246,7 @@ class MainWindow( control, gtk.Window):
             self.Widgets["Summary Label"].set_label(self.selection["Title"].get_summary())
             self.Widgets["Link"].set_uri(self.selection["Title"].site_url)
             self.Widgets["Link"].set_label("Visit Site")
+            self.Widgets["Source Title"].set_text( self.selection["Title"].get_site_name() )
 
             if( self.Widgets["Info Viewer"].props.visible == False ):
                 self.Widgets["Info Viewer"].show()
@@ -405,6 +407,7 @@ class MainWindow( control, gtk.Window):
             del self.Title_Dict[key]
         if manga_to_delete == self.selection["Title"]:
             self.selection["Title"] = None
+            self.Widgets["Source Title"].set_text(" ")
             self._update_title_details()
 
     def _on_search_change(self, widget):
