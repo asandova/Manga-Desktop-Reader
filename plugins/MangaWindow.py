@@ -36,13 +36,13 @@ logger.addHandler(file_handler)
 
 class TitlePlugin(TitleSource):
 
-    _supported_domains = ["mangawindow.net"]
+    _supported_domains = ["mangawindow.net", "bato.to"]
 
-    description = "Allows for extraction of titles from MangaWindow.net"
+    description = "Allows for extraction of titles from MangaWindow.net and bato.to"
 
     def __init__(self):
         TitleSource.__init__(self)
-        self.site_name = "Manga Window"
+        self.site_name = "Manga Window/Bato.to"
 
     def _extract_cover(self):
         cover_data = self.site_html.find('img', class_="shadow-6")
@@ -50,7 +50,7 @@ class TitlePlugin(TitleSource):
         if os.path.exists(self.save_location+'/'+self.directory) == False:
             os.mkdir(self.save_location+'/'+self.directory)
         cover_image_link = cover_data["src"]
-        cover = requests.get("https:"+ cover_image_link)
+        cover = requests.get( cover_image_link)
         ext_loc = 0
         for i in range(0,len(cover_image_link)):
             if cover_image_link[i] == '.':
@@ -80,26 +80,16 @@ class TitlePlugin(TitleSource):
     def _extract_title_info(self):
         container = self.site_html.find("div", class_="col-24 col-sm-16 col-md-18 mt-4 mt-sm-0 attr-main")
         Author_data = container.find('b', text="Authors:").parent
-        Genre_data = container.find('b', text="Genres:").parent
+        Genre_data = container.find('b', text="Genres:").parent.span
+        Genre_data = Genre_data.find_all("span")
         self.artists = ["N/A"]
         for a in Author_data.find_all('a'):
             self.authors.append( a.text )
-        Genre_str = Genre_data.find("span").text
-        start = 0
-        end = -1
-        for i in range(0, len(Genre_str) ):
-            if Genre_str[i].isalpha() == True:
-                start = i
-                break
-        for i in range( len(Genre_str)-1, 0, -1 ):
-            if Genre_str[i].isalpha() == True:
-                end = i+1
-                break
-        Genre_str = Genre_str[start:end]
-
-        split_pattern = re.compile("[ ]+/[ ]+")
-        Genre_list = split_pattern.split(Genre_str)
+        Genre_list = []
+        for g in Genre_data:
+            Genre_list.append(g.text)
         print(Genre_list)
+        
         self.genres = Genre_list
 
     def _extract_streams(self):
@@ -128,7 +118,7 @@ class TitlePlugin(TitleSource):
 
             chap =  ChapterPlugin(title[start:end], number)
             chap.set_link("https://" + self.site_domain+link)
-            print(chap)
+            #print(chap)
             title_stream.add_chapter(chap)
         self.add_stream(title_stream)
         
@@ -138,6 +128,7 @@ class TitlePlugin(TitleSource):
         dic["Site Domain"] = self.site_domain
         dic["Manga Extention"] = self.manga_extention
         dic["Title"] = self.Title
+        dic["Download Time"] = self.download_time
         dic["Summary"] = self.summary
         dic["Author(s)"] = self.authors
         dic["Artist(s)"] = self.artists
@@ -149,6 +140,26 @@ class TitlePlugin(TitleSource):
 
         return dic
         
+    def from_dict(self, dictionary):
+        self.site_url = dictionary["Site URL"]
+        self.site_domain = dictionary["Site Domain"]
+        self.manga_extention = dictionary["Manga Extention"]
+        if dictionary.get("Download Time") == None:
+            self.download_time = ""
+        else:
+            self.download_time = dictionary["Download Time"]
+        self.Title = dictionary["Title"]
+        self.summary = dictionary["Summary"]
+        self.authors = dictionary["Author(s)"]
+        self.artists = dictionary["Artist(s)"]
+        self.genres = dictionary["Genre(s)"]
+        self.cover_location = dictionary["Cover Location"]
+
+        for s in dictionary["Manga Stream(s)"]:
+            stream = Stream()
+            stream.from_dict( s, ChapterPlugin )
+            self.streams.append( stream )
+
     @staticmethod
     def is_domain_supported(domain):
         for d in TitlePlugin._supported_domains:

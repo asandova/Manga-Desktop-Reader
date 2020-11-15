@@ -15,7 +15,22 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk as gtk
 
-import os, platform
+import os, platform, logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter("%(asctime)s:%(name)s -- %(message)s")
+
+log_file = "logs/GUI_Popups.log"
+os.makedirs(os.path.dirname( log_file ), exist_ok=True)
+
+file_handler = logging.FileHandler(log_file)
+file_handler.setLevel(logging.WARNING)
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+
 
 class About_Popup(gtk.AboutDialog):
     def __init__(self, *args, **kwargs):
@@ -55,7 +70,6 @@ class add_Popup(gtk.Dialog):
         self.show_all()
 
     def _on_entry_update(self,widget):
-        #print(widget.get_text())
         self.parent.entered_url = widget.get_text()
 
 class Preference_Window(gtk.Window):
@@ -226,17 +240,17 @@ class Preference_Window(gtk.Window):
         self.update_driver_list()
 
     def _on_reload(self, name):
-        print(name)
         if self.parent.PluginManager.reload_plugin(name) != 0:
             self.Widgets["Status Label"].set_text("Failed to reload plugin \"" + name + "\"")
+            logger.info("Preference_Window:Failed to reload plugin \"" + name + "\"")
         else:
             self.Widgets["Status Label"].set_text("Reloaded plugin \"" + name + "\" successfully")
+            logger.info( "Preference_Window:Reloaded plugin \"" + name + "\" successfully" )
     
     def _on_search_select(self, widget, data):
         self.__selected_location = data
 
     def _on_SL_browse(self, widget):
-        print(widget.get_filename())
         self.Widgets["SL Entry"].set_text(widget.get_filename())
 
     class PluginFrame(gtk.Frame):

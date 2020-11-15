@@ -14,19 +14,33 @@
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk as gtk,GLib as glib, GObject
+from gi.repository import GdkPixbuf
 GObject.threads_init()
 glib.threads_init()
 
-import os, shutil, threading, re, sys, traceback
+import os, shutil, threading, re, sys, traceback, logging
 
 from src.controller import control
 from src.pluginManager import Manager
-#from src.MangaPark import MangaPark_Source
 from src.TitleSource import TitleSource
 from gtk3.ChapterListRow import ChapterListBoxRow
 from gtk3.TitleListBoxRow import TitleListBoxRow
 from gtk3.Viewer import Viewer
 from gtk3.GUI_Popups import Error_Popup, Warning_Popup, Info_Popup, add_Popup, About_Popup, ask_Popup, Preference_Window
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter("%(asctime)s:%(name)s -- %(message)s")
+
+log_file = "logs/GTKMainWindow.log"
+os.makedirs(os.path.dirname( log_file ), exist_ok=True)
+
+file_handler = logging.FileHandler(log_file)
+file_handler.setLevel(logging.WARNING)
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
 
 class MainWindow( control, gtk.Window):
 
@@ -54,6 +68,8 @@ class MainWindow( control, gtk.Window):
         self.Widgets["Genre Label"]       = self.builder.get_object("Genre_Label")
         self.Widgets["Summary Label"]     = self.builder.get_object("Summary_Data_Label")
         self.Widgets["Source Title"]      = self.builder.get_object("Source_Title")
+        self.Widgets["Cancel DL Button"]  = self.builder.get_object("DLCancel_Button")
+        self.Widgets["View DL Button"]    = self.builder.get_object("ViewDL_Button")
         self.Widgets["Stream Select"]     = self.builder.get_object("Stream_Combo_Box")
         self.Widgets["Beginning Button"]  = self.builder.get_object("BeginingButton")
         self.Widgets["Prev Button"]       = self.builder.get_object("PrevButton")
@@ -74,6 +90,7 @@ class MainWindow( control, gtk.Window):
         self.Widgets["Add Title"]                     = self.builder.get_object("Add_Manga_Menu_Button")
         self.Widgets["Title Buttons"] = {}
 
+        self.Widgets["View DL Button"].set_sensitive(False)
         self.Widgets["Source Title"].set_text(" ")
         self.Widgets["Download all chapters Button"].set_sensitive(True)
         self.Widgets["Download all chapters Button"].set_tooltip_text("Download all chapters in current stream list")
@@ -83,6 +100,7 @@ class MainWindow( control, gtk.Window):
         self.signal_ids["Main Window"]         = self.Widgets["Main Window"].connect("delete-event", self._on_quit)
         self.signal_ids["Add Title"]           = self.Widgets["Add Title"].connect("activate",self._on_menu_add)
         self.signal_ids["Pref"]           = self.Widgets["Pref"].connect("activate",self._on_pref)
+        self.signal_ids["Cancel DL Button"]    = self.Widgets["Cancel DL Button"].connect("clicked", self._on_cancel_downloads)
         self.signal_ids["Update Streams"]      = self.Widgets["Update Streams"].connect("clicked",self._on_update)
         self.signal_ids["Beginning Button"]    = self.Widgets["Beginning Button"].connect("clicked", self._on_beginning)
         self.signal_ids["Prev Button"]         = self.Widgets["Prev Button"].connect("clicked", self._on_prev)
@@ -96,7 +114,6 @@ class MainWindow( control, gtk.Window):
         self.signal_ids["Title List row change"] = self.Widgets["Title List"].connect("selected-rows-changed",self._on_list_select)
         self.signal_ids["About"]        = self.Widgets["About"].connect("activate", self.about)
         self.signal_ids["Chapter Sort"] = self.Widgets["Chapter Sort"].connect("clicked", self._on_sort)
-
 
         self.Widgets["Main Window"].show()
         self._get_title_list_from_file()
@@ -148,14 +165,15 @@ class MainWindow( control, gtk.Window):
         return None
 
     def _load_title_entry(self):
-        self.update_status(True, "Loading Title List.....")
+        self.update_status(True, "Loading Title List...")
+        logger.info("Loading Title List...")
         for m in self.Title_Dict.keys():      
             self.add_title_entry(m)
         self.Widgets["Title List"].show()
+        logger.info( "Loaded Title List" )
         self.update_status(False,"Loaded Title List")
 
     def _on_remove_chapter(self, chapter_row):
-        print(chapter_row.is_downloaded())
         if chapter_row.is_downloaded() == True:
             print(chapter_row.chapter_path+'/'+chapter_row.chapter.directory+ '.zip')
             if os.path.isfile(chapter_row.chapter_path+'/'+chapter_row.chapter.directory+ '.zip') == True:
@@ -235,10 +253,15 @@ class MainWindow( control, gtk.Window):
     def _update_title_details(self):
         if self.selection["Title"] != None:
             self.Widgets["Cover"].clear()
-            if os.path.isfile(self.selection["Title"].get_cover_location()) == False: 
+            if os.path.isfile(self.selection["Title"].get_cover_location()) == False:
                 self.Widgets["Cover"].set_from_icon_name("gtk-missing-image", 30)
             else:
-                self.Widgets["Cover"].set_from_file(self.selection["Title"].get_cover_location())
+                pb = GdkPixbuf.Pixbuf.new_from_file(self.selection["Title"].get_cover_location())
+                if pb.get_width() > 300:
+                    sheight = 300 * pb.get_height() / pb.get_width()
+                    pb = pb.scale_simple(dest_width=300, dest_height=sheight, interp_type = 2)
+                self.Widgets["Cover"].set_from_pixbuf(pb)
+
             self.Widgets["Title Label"].set_label(self.selection["Title"].get_title())
             self.Widgets["Authors Label"].set_label( "Author(s): " + self.selection["Title"].get_Authors_str())
             self.Widgets["Artists Label"].set_label("Artist(s): " + self.selection["Title"].get_Artists_str())
@@ -273,12 +296,16 @@ class MainWindow( control, gtk.Window):
     def _on_beginning(self, widget):
         super()._on_beginning()
 
+    def _on_cancel_downloads(self, widget):
+        self._KillThreads[0] == True
+
     def _on_download(self, title, stream, chapter, location):
         id = hash( (title, stream, chapter) )
         if self.in_chapter_queue( id ) == False:
             self.ChapterQueue.appendleft( (title, stream, chapter, location, id) )
             if self.threads["Chapter"] == None:
                 self.threads["Chapter"] = threading.Thread( target=self._download_chapter_runner )
+                self._KillThreads[0] = False
                 self.threads["Chapter"].start()
             else:
                 self.update_status( True, "Downloading " + title.get_title() + " Chapter  " + str(chapter.get_chapter_number()) + "\nChapters Queued " + str( len(self.ChapterQueue) ) )
@@ -304,6 +331,7 @@ class MainWindow( control, gtk.Window):
             for u in urls: 
                 if u == "" or u == None:
                     error = Error_Popup(self,"Invalid","Invalid site domain")
+                    logger.info("Entered Invalid site domain")
                     error.run()
                     error.destroy()
                 else:
@@ -313,14 +341,17 @@ class MainWindow( control, gtk.Window):
                         self.TitleQueue.appendleft( (title, u) )
                         if self.threads["Title"] == None:
                             self.threads["Title"] = threading.Thread(target=self._add_title_from_url_runner)
+                            self._KillThreads[0] = False
                             self.threads["Title"].start()
                     
                     elif domain == None:
                         error = Error_Popup(self,"Invalid","Invalid site domain")
+                        logger.info("Entered Invalid site domain")
                         error.run()
                         error.destroy()
                     else:
-                        error = Error_Popup(self,"Unsupported Manga Site", domain + " is currently not supported")
+                        error = Error_Popup(self,"Unsupported Title Site", domain + " is currently not supported")
+                        logger.info("Entered unsupported title site")
                         error.run()
                         error.destroy()
 
@@ -344,8 +375,6 @@ class MainWindow( control, gtk.Window):
                 self._update_chapter_list(length=self.chapter_per_page, offset=self.page_location["current"])
 
     def _on_location_change(self, widget):
-        print("Location change")
-        print(f"Selected text: {widget.get_active_text()}")
         str_elements = widget.get_active_text().split("/")
 
         if str_elements[0].isnumeric() == True:
@@ -358,7 +387,6 @@ class MainWindow( control, gtk.Window):
 
             self._update_location_controls()
             self._update_chapter_list(length=self.chapter_per_page, offset=self.page_location["current"])
-        pass
 
     def _on_pref(self, widget):
         self.Pref_window = Preference_Window(self,"Preference_Window")
@@ -516,13 +544,12 @@ class MainWindow( control, gtk.Window):
             for s in self.selection["Title"].get_streams():
                 self.Widgets["Stream Select"].append_text(s.get_name())
 
-    # Static Methods ------------------------------------------------------------------------#
-
     # Thread worker methods -----------------------------------------------------------------#
 
     def _add_title_from_url_runner( self ):
         while len( self.TitleQueue ) > 0:
             if self._KillThreads == True:
+                self.TitleQueue.clear()
                 return 
 
             self._current_task["Title"] = self.TitleQueue.pop()
@@ -539,7 +566,7 @@ class MainWindow( control, gtk.Window):
             else:
                 try:
                     glib.idle_add(self.update_status, True , "Extracting : " + url)
-                    title.extract_manga()
+                    title.extract_title()
                     glib.idle_add(self.update_status,False, "Extraction Complete")
                     if self.title_exist(title.get_title() ) == False:
                         self.add_title_entry(title.get_title())
@@ -557,6 +584,7 @@ class MainWindow( control, gtk.Window):
     def _download_chapter_runner(self):
         while len(self.ChapterQueue) > 0:
             if self._KillThreads[0] == True:
+                self.ChapterQueue.clear()
                 return
             self._current_task["Chapter"] = self.ChapterQueue.pop()
             title = self._current_task["Chapter"][0]
@@ -586,7 +614,6 @@ class MainWindow( control, gtk.Window):
         try:
             status = title.update_streams()
             if status == 0:
-                print("Status " + str(status))
                 GObject.idle_add( self._update_chapter_list)
                 GObject.idle_add( self.update_status, False, "Updated : " + self.selection["Title"].get_title())
                 title.to_json_file(title.save_location)
@@ -597,5 +624,5 @@ class MainWindow( control, gtk.Window):
             
         except Exception as e:
             traceback.print_exc(file=sys.stdout)
-            print("Error occured: " + str(e))
+            logger.exception("Error occured: " + str(e))
         self.threads["Stream"] = None

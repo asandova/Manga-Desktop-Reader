@@ -55,6 +55,9 @@ class Viewer(gtk.Window):
                 "Page Number Label" : self.builder.get_object("Page_Number_Label"),
                 "Zoom Label" : self.builder.get_object("Zoom_Label")
             }
+            percentage_value = self.zoom_percentage/10.0
+            precentage_text = str( int ( percentage_value * 100)) 
+            self.Widgets["Zoom Label"].set_text("Zoom: " + precentage_text + "%")
             self.Widgets["Quit"].connect("clicked",self._on_quit)
             self.Widgets["Quit"].connect("delete-event",self._on_quit)
 
@@ -84,7 +87,6 @@ class Viewer(gtk.Window):
         self.number_of_pages = len(pages)
         for page in pages:
             elements = re.split('[_.]',page)
-            #print(elements)
             num = int(elements[1])
             self.page_image[ num ] = page
 
@@ -95,7 +97,6 @@ class Viewer(gtk.Window):
         self.Widgets["Page Image"].clear()
         if self.page_image.get(page_number) != None:
             path = self.save_location +'/'+ self.chapter.get_directory() +"/"+ self.page_image[page_number] 
-            #print(path)
             if os.path.isfile(path) == False or page_number == -1: 
                 self.Widgets["Page Image"].set_from_icon_name("gtk-missing-image", 30)
             else:

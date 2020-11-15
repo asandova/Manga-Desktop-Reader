@@ -31,7 +31,7 @@ logger.setLevel(logging.DEBUG)
 
 formatter = logging.Formatter("%(asctime)s:%(name)s -- %(message)s")
 
-log_file = "logs/" + __name__ + "z"
+log_file = "logs/" + __name__ + ".log"
 os.makedirs(os.path.dirname( log_file ), exist_ok=True)
 
 file_handler = logging.FileHandler(log_file)
@@ -185,12 +185,12 @@ class ScrollableFrame(Frame):
     def grid_columnconfigure(self, index, weight):
         """Configure a Column at index for internal widgets in the scroll frame
         """
+        print("In grid_columnconfig")
         self.__ScrollFrame.grid_columnconfigure(index=index, weight=weight)
 
     # Signal callback methods ---------------------------------------------------------------#
 
     def __on_enter(self, event):
-        #print("Enter event")
         if platform.system() == "Windows":
             self.bind_all("<MouseWheel>", self.__on_mousewheel)
             self.bind_all("<Shift-MouseWheel>", self.__on_shift_mousewheel)
@@ -201,7 +201,6 @@ class ScrollableFrame(Frame):
             self.bind_all("<Shift-Button-5>",self.__on_shift_mousewheel)
 
     def __on_leave(self,event):
-        #print("Leave event")
         if platform.system() == "Windows":
             self.unbind_all("<MouseWheel>")
             self.unbind_all("<Shift-MouseWheel>")
@@ -239,14 +238,13 @@ class ScrollableFrame(Frame):
 if __name__ == "__main__":
     main = Tk()
     main.minsize(30,30)
-    test = ScrollableFrame(master=main, anchor="nw",fill=X)
-    print(test)
+    test = ScrollableFrame(master=main, anchor="nw")
     test.pack(side=LEFT,fill=BOTH, expand=1)
-    
+    test.grid_columnconfigure(0, weight=1)
     for i in range(10):
         label = Label(master=test.get_attach_point(), text=str(i))
         label["bg"] = "red"
         label.grid(row=i, column=i, sticky=E+W)
-        test.grid_columnconfigure(i, weight=1)
+
         
     main.mainloop()

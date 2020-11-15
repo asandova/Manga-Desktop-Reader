@@ -34,7 +34,7 @@ logger.setLevel(logging.DEBUG)
 
 formatter = logging.Formatter("%(asctime)s:%(name)s -- %(message)s")
 
-log_file = "logs/MangaPark.log"
+log_file = "logs/nHentai.log"
 os.makedirs(os.path.dirname( log_file ), exist_ok=True)
 
 file_handler = logging.FileHandler(log_file)
@@ -59,6 +59,10 @@ class TitlePlugin(TitleSource):
         self.site_domain = dictionary["Site Domain"]
         self.manga_extention = dictionary["Manga Extention"]
         self.Title = dictionary["Title"]
+        if dictionary.get("Download Time") == None:
+            self.download_time = ""
+        else:
+            self.download_time = dictionary["Download Time"]
         self.directory = self.Title.replace(' ', '_')
         self.summary = dictionary["Summary"] 
         self.authors = dictionary["Author(s)"] 
@@ -77,6 +81,7 @@ class TitlePlugin(TitleSource):
         dic["Site Domain"] = self.site_domain
         dic["Manga Extention"] = self.manga_extention
         dic["Title"] = self.Title
+        dic["Download Time"] = self.download_time
         dic["Summary"] = self.summary
         dic["Author(s)"] = self.authors
         dic["Artist(s)"] = self.artists
@@ -153,39 +158,36 @@ class TitlePlugin(TitleSource):
     def _extract_title_info(self):
         container = self.site_html.find("section", id="tags")
         subcontainer = container.find_all("div",class_="tag-container field-name ")
-        number_replace = re.compile( "(\([0-9]+(,[0-9]+)*\))" )
+        number_replace = re.compile( "([0-9]+\w{0,1})" )
         for sub in subcontainer:
             if "Artists:" in sub.text:
                 artists = sub.find_all("a")
                 for a in artists:
                     artist = a.text.strip()
                     artist = re.sub(number_replace,"",artist)
-                    print(a.text.strip())
-                    self.artists.append( artist[0:-1] )
-                    self.authors.append( artist[0:-1] )
+                    self.artists.append( artist)
+                    self.authors.append( artist )
 
             if "Tags:" in sub.text:
                 genres = sub.find_all("a")
                 print(len(genres))
                 for g in genres:
                     genre = g.text.strip()
-                    print( genre)
                     genre = re.sub(number_replace,"",genre)
-                    print( genre)
-                    self.genres.append( genre[0:-1] )
+                    self.genres.append( genre)
         
     def _extract_streams(self):
         page_container = self.site_html.find("div", id="thumbnail-container")
         pages = page_container.find_all("div", class_="thumb-container")
         title_stream = Stream("nhentai", id=69)
         for p in pages:
-            p.prettify()
+            #p.prettify()
             self.page_links.append( "https://" + self.site_domain + p.a["href"])
 
         chap = ChapterPlugin("", 1)
         chap.set_link(self.page_links)
         #chap.set_link("https://" + self.site_domain+link)
-        print(chap)
+        #print(chap)
         title_stream.add_chapter(chap)
         self.add_stream(title_stream)
 
@@ -211,9 +213,9 @@ class ChapterPlugin(Chapter):
     def set_link(self, link):
         if type(link) == list:
             for l in link:
-                print(link)
+                #print(link)
                 link_elements = l.split("/")
-                print(link_elements)
+                #print(link_elements)
                 self.page_links[ link_elements[-2] ] = l
         else:
             super().set_link(link)

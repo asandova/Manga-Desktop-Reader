@@ -116,8 +116,6 @@ class ChapterListBoxRow(gtk.ListBoxRow):
         else:
             self.RowWidgets["Spinner"].stop()
 
-        #print(button)
-        #print(f"text: {text}")
         if button == "remove":
             #print("changing remove button")
             if text != None:
@@ -127,14 +125,12 @@ class ChapterListBoxRow(gtk.ListBoxRow):
             self.RowWidgets["Remove Button"].set_sensitive(active)
 
         elif button == "download":
-            #print("changing download button")
             if text != None:
                 self.RowWidgets["Download Button"].set_label(text)
                 if tooltip != None:
                     self.RowWidgets["Download Button"].set_tooltip_text(tooltip)
             self.RowWidgets["Download Button"].set_sensitive(active)
         elif button == "view":
-            #print("changing view button")
             if text != None:
                 self.RowWidgets["View Button"].set_label(text)
                 if tooltip != None:

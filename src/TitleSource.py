@@ -17,6 +17,7 @@ except:
 from src.pluginManager import Manager
 from abc import ABC, abstractmethod
 import json, platform, requests, logging, re, os
+from datetime import datetime
 from bs4 import BeautifulSoup
 
 platform_type = platform.system()
@@ -58,6 +59,7 @@ class TitleSource(ABC):
         self.manga_extention = ""
         self.save_location = TitleSource.default_save_location
         self.Title = ""
+        self.download_time = ""
         self.directory = re.sub(TitleSource.replace_illegal_character_pattern, "-", self.Title)
         self.directory = re.sub(TitleSource.replace_space, "_", self.directory)
         #self.directory = self.Title.replace(' ', '_')
@@ -86,13 +88,13 @@ class TitleSource(ABC):
             return r.status_code
         else:
             #print("Extracting Manga from " + url)
+            self.download_time = datetime.now().strftime("%I:%M%p\n%b %d, %Y")
             self.site_html = BeautifulSoup( r.text, 'lxml' )
             self.site_url = url
-            
             #print("Extraction complete")
             return 0
     
-    def extract_manga(self):
+    def extract_title(self):
             logger.info("Extracting Domain...")
             self._extract_domain(self.site_url)
             logger.info("Extracting Title...")
@@ -124,9 +126,11 @@ class TitleSource(ABC):
             if r.ok != True:
                 return r.status_code
             else:
+                self.download_time = datetime.now().strftime("%I:%M%p\n%b %d, %Y")
                 self.site_html = BeautifulSoup( r.text, 'lxml' )
                 self.streams = []
-                self._extract_streams()
+                self.extract_title()
+                #self._extract_streams()
                 return 0
         except Exception:
             logger.exception("Failed to update")
@@ -411,6 +415,7 @@ class TitleSource(ABC):
         self.site_domain = dictionary["Site Domain"]
         self.manga_extention = dictionary["Manga Extention"]
         self.Title = dictionary["Title"]
+        self.download_time = dictionary["Download Time"]
         self.directory = self.Title.replace(' ', '_')
         self.summary = dictionary["Summary"]
         self.cover_location = dictionary["Cover Location"]
@@ -430,13 +435,13 @@ class TitleSource(ABC):
         dic["Site URL"] = self.site_url
         dic["Site Domain"] = self.site_domain
         dic["Manga Extention"] = self.manga_extention
+        dic["Download Time"] = self.download_time
         dic["Title"] = self.Title
         dic["Manga Stream(s)"] = []
         for s in self.streams:
             dic["Manga Stream(s)"].append( s.to_dict() )
         dic["Summary"] = self.summary
         dic["Cover Location"] = self.cover_location
-        dic["Keep"] = self.keep
         return dic
 
     def to_json_file(self, save_location):

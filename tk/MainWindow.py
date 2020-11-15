@@ -29,13 +29,13 @@ import os, sys ,json, platform, pygubu, threading, shutil, re, traceback, loggin
 import math
 from PIL import Image, ImageTk
 from queue import Queue
-#from src.MangaPark import MangaPark_Source
 from src.pluginManager import Manager
 from src.TitleSource import TitleSource
 from src.controller import control
 from tk.ScrollableListBox import ScrollableListbox
 from tk.ScrollableFrame import ScrollableFrame
 from tk.Viewer import Viewer
+from tk.QueueWindow import QueueWindow
 from tk.popups import add_Window, about_dialog, PreferenceWindow
 from tk.ChapterRow import ChapterRow
 
@@ -60,6 +60,7 @@ class MainWindow(Tk, control):
     Verdana_Normal_13 = ("verdana", 13, "normal")
     Verdana_Normal_12 = ("verdana", 12, "normal")
     Verdana_Normal_11 = ("verdana", 11, "normal")
+    Verdana_Normal_10 = ("verdana", 10, "normal")
     Verdana_Bold_15 = ("verdana", 15, "bold")
     Verdana_Bold_13 = ("verdana", 13, "bold")
     Verdana_Bold_11 = ("verdana", 11, "bold")
@@ -80,7 +81,8 @@ class MainWindow(Tk, control):
                 "Genres"    : StringVar(),
                 "Summary"   : StringVar(),
                 "Status"    : StringVar(),
-                "Source Name" : StringVar()
+                "Source Name" : StringVar(),
+                "Update Time" : StringVar()
             }
 
             self.title(title)
@@ -91,7 +93,9 @@ class MainWindow(Tk, control):
             if UI_Template != None or os.path.isfile(UI_Template+".ui") != False:
                 self.__create_from_template(UI_Template)
             else:
-                self.__create_from_default()
+                logger.error("No valid template file found. Exiting.")
+                quit(-1)
+                #self.__create_from_default()
 
             self.protocol("WM_DELETE_WINDOW",self._on_quit)
 
@@ -111,6 +115,7 @@ class MainWindow(Tk, control):
         self.Widgets["Title Frame"] = self.builder.get_object("Titleframe")
         self.Widgets["Title List"] = None
         self.Widgets["Add Popup"] = None
+        self.Widgets["View Downloads"] = None
         self.Widgets["InfoLabelFrame"] = self.builder.get_object("InfoFrameLabel")
         self.Widgets["Scroll Frame"] = self.builder.get_object("ScrollFrame")
         self.Widgets["InfoFrame"] = self.builder.get_object("InfoFrame")
@@ -119,9 +124,12 @@ class MainWindow(Tk, control):
         self.Widgets["Author Label"] = self.builder.get_object("AuthorLabel")
         self.Widgets["Artist Label"] = self.builder.get_object("ArtistLabel")
         self.Widgets["Genre Label"] = self.builder.get_object("GenreLabel")
+        self.Widgets["Update Time Label"] = self.builder.get_object("UpdateTimeLabel")
         self.Widgets["Summary Text"] = self.builder.get_object("SummaryText")
         self.Widgets["Summary Frame"] = self.builder.get_object("SummaryFrame")
         self.Widgets["Stream Select"] = self.builder.get_object("StreamSelect")
+        self.Widgets["Cancel DL Button"] = self.builder.get_object("CancelDL_Button")
+        self.Widgets["View DL Button"] = self.builder.get_object("ViewDL_Button")
         self.Widgets["Search Button"] = self.builder.get_object("SearchButton")
         self.Widgets["Beginning Button"] = self.builder.get_object("BeginningButton")
         self.Widgets["Prev Button"] = self.builder.get_object("PrevButton")
@@ -154,6 +162,10 @@ class MainWindow(Tk, control):
         self.Widgets["Genre Label"]["font"] = self.Verdana_Normal_12
         self.Widgets["Genre Label"]["relief"] = "ridge"
 
+        self.Widgets["Update Time Label"]["textvariable"] = self.Info["Update Time"]
+        self.Widgets["Update Time Label"]["font"] = self.Verdana_Normal_10
+        self.Widgets["Update Time Label"].config(width=19)
+
         self.Widgets["Summary Frame"]["labelwidget"] = Label(text="Summary", font=self.Verdana_Bold_11)
         self.Widgets["Summary Text"]["font"] = self.Verdana_Normal_11
 
@@ -177,6 +189,9 @@ class MainWindow(Tk, control):
 
         self.Widgets["Status Label"]["textvariable"] = self.Info["Status"]
 
+        self.Widgets["Cancel DL Button"].config( command=self._on_cancel_downloads)
+        self.Widgets["View DL Button"]["state"] = DISABLED
+        #self.Widgets["View DL Button"].config(command=self._on_view_downloads)
         self.Widgets["Search Button"].config(command=self._on_search_change)
         self.Widgets["Beginning Button"].config(command=self._on_beginning)
         self.Widgets["Prev Button"].config(command=self._on_prev)
@@ -204,8 +219,8 @@ class MainWindow(Tk, control):
         self.config( menu = self.Widgets["Menu"])
         self.builder.connect_callbacks(self)
 
-    def __create_from_default(self):
-        pass
+    #def __create_from_default(self):
+    #    pass
 
     def add_title_entry(self,name):
         self.Widgets["Title List"].insert(name)
@@ -220,6 +235,7 @@ class MainWindow(Tk, control):
         if self.threads["Chapter"] == None:
             self.threads["Chapter"] = threading.Thread( target=self._download_chapter_runner )
             logger.info("Starting chapter download thread")
+            self._KillThreads[0] = False
             self.threads["Chapter"].start()
         else:
             if self._current_task["Chapter"] != None:
@@ -227,65 +243,7 @@ class MainWindow(Tk, control):
                 chapter = self._current_task["Chapter"][2]
                 mess = "Downloading " + title.get_title() + " Chapter  " + str(chapter.get_chapter_number()) + "\nChapters Queued " + str( len(self.ChapterQueue) )
                 self.update_status( message=mess )
- 
-    def _export_title_list_to_file(self, export_file="tracking_list.json"):
-        if self.appConfig['Hide Cache Files']== True:
-            if platform.system()  == "Linux":
-                export_file = "." + export_file
-
-        dic = { "Number of titles": len(self.Title_Dict), "Search Location(s)" : [], "Title List" : {} }
-        for l in self.search_locations:
-            dic["Search Location(s)"].append(l)
-
-        for m in self.Title_Dict.keys():
-            location = self.Title_Dict[m].save_location
-            if dic["Title List"].get(location) == None:
-                dic["Title List"][location] = []
-            dic["Title List"][location].append(m)
-
-        with open(self.appConfig["Cashe Save Location"] +'/'+ export_file, 'w') as f:
-            f.write(json.dumps(dic, separators=(",", " : "), indent=4))
-            f.close()
-
-    def _get_title_list_from_file(self, json_file="tracking_list.json"):
-        if self.appConfig["Hide Cache Files"] == True:
-            if platform.system() == "Linux":
-                json_file = "." + json_file
-
-        if os.path.exists(self.appConfig["Cashe Save Location"] +'/'+json_file) == True:
-            cache_string = ""
-            with open(self.appConfig["Cashe Save Location"] +'/'+ json_file, 'r') as f:
-                cache_string = f.read()
-                f.close()
-            dic = json.loads(cache_string)
-            if(len(dic) != 0):
-                #get title from tracking file
-                for l in dic["Title List"].keys():
-                    self.search_locations.add(l)
-                    for m in dic["Title List"][l]:
-                        _m = m.replace(" ", "_")
-                        cache_path = _m + "/" + _m + ".json"
-                        if self.check_title_cache_exists(l,cache_path) == True:
-                            title_object = self.read_title_cache(l + '/' + cache_path)
-                            if title_object != None:
-                                self.Title_Dict[m] = title_object
-        #search for titles not in tracking file
-        print("Searching for untracked Titles")
-        for search in self.appConfig["Search Location(s)"]:
-            #print(search)
-            dirs = os.listdir(search)
-            for d in dirs:
-                #print("Checking " + str(d))
-                path = search + '/'+ d + "/" + d + '.json'
-                _d = d.replace('_', ' ')
-                if os.path.isfile(path) == True and self.Title_Dict.get(_d) == None:
-                    title_object = self.read_title_cache( path)
-                    if title_object != None:
-                        if self.Title_Dict.get(title_object.get_title()) == None:
-                            self.search_locations.add(search)
-                            print("Discovered: " + title_object.get_title() + " in " + search)
-                            self.Title_Dict[title_object.get_title()] = title_object
-
+                
     def is_chapter_visable( self, title, stream, chapter ):
         chapter_hash = hash( ( title, stream, chapter ) )
         for i in range( 0, len(self.Chapter_List) ):
@@ -361,7 +319,11 @@ class MainWindow(Tk, control):
         self.Info["Authors"].set(authors_string)
         self.Info["Artists"].set(artists_string)
         self.Info["Genres"].set(genres_string)
-
+        if self._current_task["Update Title"] == self.selection["Title"]:
+            self.Widgets["Update Button"]["state"] = DISABLED
+        else:
+            self.Widgets["Update Button"]["state"] = NORMAL
+        self.Info["Update Time"].set( "Last update: "+self.selection["Title"].download_time )
         self.Widgets["Summary Text"]["state"] = NORMAL
         self.Widgets["Summary Text"].delete(1.0,END)
         self.Widgets["Summary Text"].insert(END, self.selection["Title"].get_summary())
@@ -374,31 +336,30 @@ class MainWindow(Tk, control):
     def about(self):
         about_dialog(master=self)
 
+    def _on_cancel_downloads(self):
+        self._KillThreads[0] = True
+
     def _on_menu_add(self):
         self.Widgets["Add Popup"] = add_Window(master=self,OKCommand=self._on_add_responce)
     
     def _on_quit(self):
         self._export_title_list_to_file()
         self._export_config()
-        if self.threads["Title"] != None:
-            result = messagebox.askyesno("Active Download", "Do you want to wait title to download?")
+        result = None
+        if self.threads["Title"] != None or self.threads["Stream"] != None or self.threads["Chapter"]:
+            result = messagebox.askyesno("Active Download(s)", "Do you want to wait for downloads to finish?")
             if result == False:
-                return
-            else:
+                self.Info["Status"].set("shuting down threads")
                 self._KillThreads = True
-
-        if self.threads["Stream"] != None:
-            self.Info["Status"].set("Waiting for Stream Update to finish")
-            self.threads["Stream"].join()
-
-        if self.threads["Chapter"] != None:
-            result = messagebox.askyesno("Active Downloads", "Do you want to stop download?")
-            if result == False:
-                return
+                if self.threads["Title"] != None:
+                    self.threads["Title"].join()
+                if self.threads["Stream"] != None:
+                    self.threads["Stream"].join()
+                if self.threads["Chapter"] != None:
+                    self.threads["Chapter"].join()
             else:
-                self._KillThreads[0] = True
-                self.Info["Status"].set("Waiting for Chapter downloads to finish")
-           
+                return
+
         self.destroy()
 
     def _on_add_responce(self , data):
@@ -434,11 +395,9 @@ class MainWindow(Tk, control):
             self._update_chapter_list(length=self.chapter_per_page, offset=self.page_location["current"])
 
     def _on_location_change(self, event=None):
-        #print("Location change")
         page_str = self.Widgets["Location Select"].get()
         page_elements = page_str.split("/")
         if event.keycode == 36:
-            #print("keyPress type")
             if page_elements[0].isnumeric() == True:
                 page_num = int( page_elements[0] ) - 1
                 if page_num > self.page_location["end"]:
@@ -461,14 +420,17 @@ class MainWindow(Tk, control):
         title_to_delete = self.Title_Dict[self.selection["Title"].get_title()]
 
         location = title_to_delete.save_location +'/' + title_to_delete.directory
-        
+        print(title_to_delete.save_location)
         if os.path.isdir(location) == True:
-            shutil.rmtree(location)
-            del self.Title_Dict[ self.selection["Title"].get_title() ]
-            self.Widgets["Title List"].delete( self.selection["Title"].get_title() )
-            self.selection["Title"] = None
-            self.selection["stream"] = None
-            self.selection["chapter"] = None
+            if location != self.appConfig["Default Download Location"] or location != title_to_delete.save_location:
+                shutil.rmtree(location)
+                del self.Title_Dict[ self.selection["Title"].get_title() ]
+                self.Widgets["Title List"].delete( self.selection["Title"].get_title() )
+                self.selection["Title"] = None
+                self.selection["stream"] = None
+                self.selection["chapter"] = None
+            else:
+                logging.warning("Tried to delete library location")
 
     def _on_remove_chapter(self, chapter_row):
         chapter_row.update_state("download", "Download", active=True)
@@ -511,17 +473,19 @@ class MainWindow(Tk, control):
         else:
             Viewer(self.selection["Title"], self.selection["Stream"], self.selection["Chapter"])
     
+    #def _on_view_downloads(self):
+    #    pass
+
     def _on_update(self):
 
         if self.selection["Title"] != None:
             if self.threads["Stream"] == None:
-                self.update_status(self.selection["Title"].get_title() + "\tUpdating Streams...")
-                self.threads["Stream"] = threading.Thread( target=self._update_stream_runner, args=(self.selection["Title"],) )
+                self.UpdateTitleQueue.appendleft( self.selection["Title"] )
+                self.threads["Stream"] = threading.Thread( target=self._update_stream_runner )
                 logger.info("Starting Title Update Thread")
                 self.threads["Stream"].start()
             else:
-                logger.warning("Tried to start a secondary Title update thread")
-                messagebox.showwarning("Title Update", "An update is in progress. Wait for update to complete before requesting another.")
+                self.UpdateTitleQueue.appendleft(self.selection["Title"])
         else:
             #should never get here
             messagebox.showwarning("Warning","No Title Stream Selected")
@@ -574,7 +538,7 @@ class MainWindow(Tk, control):
                                     downloadcommand=self._download_chapter,
                                     removecommand=self._on_remove_chapter
                 )
-                row.grid(row=8+i, column=0, columnspan=11, sticky=E+W)
+                row.grid(row=8+i, column=0, columnspan=12, sticky=E+W)
                 row["relief"] = "groove"
 
                 self.Chapter_List.append( (row , hash(row) )  )
@@ -606,7 +570,8 @@ class MainWindow(Tk, control):
 
         while len(self.TitleQueue) > 0 :
             if self._KillThreads[0] == True:
-                logger.info("Title Thread kill singal received.")
+                logger.info("Title Thread kill signal received.")
+                self.TitleQueue.clear()
                 return
             self._current_task["Title"] = self.TitleQueue.pop()
             title = self._current_task["Title"][0]
@@ -622,7 +587,7 @@ class MainWindow(Tk, control):
                 try: 
                     if self.Title_Dict.get(title.get_title()) == None:
                         self.update_status("Extracting : " + url)
-                        title.extract_manga()
+                        title.extract_title()
                         self.update_status( "Extraction of " + title.get_title() + " Complete" )
                         self.add_title_entry(title.get_title())
                         self.Title_Dict[title.get_title()] = title
@@ -634,13 +599,17 @@ class MainWindow(Tk, control):
                 except:
                     logger.exception("Failed to extraction: " + url)
                     messagebox.showerror("Failed to extract","Failed to extract title data from url: " + url)
+            if self._KillThreads[0] == True:
+                logger.info("Title Thread kill signal received.")
+                return
 
         self.threads["Title"] = None
 
     def _download_chapter_runner(self):
         while len(self.ChapterQueue) > 0:
             if self._KillThreads[0] == True:
-                logger.info("Chapter Thread kill singal received.")
+                logger.info("Chapter Thread kill signal received.")
+                self.ChapterQueue.clear()
                 return
             self._current_task["Chapter"] = self.ChapterQueue.pop()
             title = self._current_task["Chapter"][0]
@@ -660,7 +629,7 @@ class MainWindow(Tk, control):
                 self.update_status("Failed to download:\n" + str(chapter) )
                 if row != None:
                     row.Info["Download"].set( "Download" )
-                    row.update_state("download", True)
+                    row.update_state("download", "Download" , True)
                 continue
             else:
                 self.update_status( "Download of " + title.get_title() + "\n" + str(chapter) + " --- Completed" )
@@ -669,21 +638,41 @@ class MainWindow(Tk, control):
                     row.update_state("download")
                     row.update_state("view", "View",True)
                     row.update_state("remove", "Remove",True)
+            if self._KillThreads[0] == True:
+                logger.info("Chapter Thread kill signal received.")
+                return
 
         self.threads["Chapter"]= None
 
-    def _update_stream_runner( self, title_object ):
-        self.update_status( "Updating Streams for " + self.selection["Title"].get_title())
-        try:
-            status = title_object.update_streams()
-            if status == 0:
-                title_object.to_json_file(title_object.save_location)
-                self.update_status( self.selection["Title"].get_title() + "\nUpdated" )
-            else:
-                logger.info("Update Error, HTML error code: " + str(status))
-                messagebox.showerror("Update Error", "Site returned error " + str(status) )
-        except Exception:
-            logger.exception("Failed to update " + self.selection["Title"].get_title())
-            self.update_status( "Failed to update " + self.selection["Title"].get_title())
-        finally:
-            self.threads["Stream"] = None
+    def _update_stream_runner( self ):
+       
+        while len(self.UpdateTitleQueue) > 0:
+            if self._KillThreads[0] == True:
+                logger.info("Stream Thread kill signal received.")
+                return
+            self._current_task["Update Title"] = self.UpdateTitleQueue.pop()
+            title_object = self._current_task["Update Title"]
+            self.update_status( "Updating " + title_object.get_title()+ "\n" + str(len( self.UpdateTitleQueue) ) + " Updates pending")
+            if title_object == self.selection["Title"]:
+                self.Widgets["Update Button"]["state"] = DISABLED
+            try:
+                status = title_object.update_streams()
+                if status == 0:
+                    title_object.to_json_file(title_object.save_location)
+                    if title_object == self.selection["Title"]:
+                        self.Info["Update Time"].set( "Last Update: " + title_object.download_time )
+                    self.update_status( title_object.get_title() + "\nUpdated" )
+                    if title_object == self.selection["Title"]:
+                        self.Widgets["Update Button"]["state"] = NORMAL
+                else:
+                    logger.info("Update Error, HTML error code: " + str(status))
+                    messagebox.showerror("Update Error", "Site returned error " + str(status) )
+            except Exception:
+                logger.exception("Failed to update " + title_object.get_title())
+                self.update_status( "Failed to update " + title_object.get_title())
+
+            if self._KillThreads[0] == True:
+                logger.info("Stream Thread kill signal received.")
+                return
+
+        self.threads["Stream"] = None

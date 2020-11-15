@@ -63,18 +63,14 @@ class add_Window(Toplevel):
         self.destroy()
 
     def Accept(self):
-        #print("Accept button pressed")
-        #print( "\"" + self.Value.get()+ "\"")
         if self.AcceptCommand != None:
             self.AcceptCommand(self.Value.get())
         self.destroy()
 
     def Cancel(self):
-        #print("Cancel Button pressed")
         if self.CancelCommand != None:
             self.CancelCommand()
         self.destroy()
-
 
 class PreferenceWindow(Toplevel):
     Verdana_Normal_12 = ("verdana", 12, "normal")
@@ -176,7 +172,6 @@ class PreferenceWindow(Toplevel):
         for l in self.parent.appConfig["Search Location(s)"]:
             self.Widgets["SL List"].insert(l)
 
-        #self.Widgets["Plugin Frame"] = Frame(master=self.Widgets["Selection Notebook"])
         self.Widgets["Plugin Frame"] = ScrollableFrame( master=self.Widgets["Selection Notebook"], anchor="nw" )
 
         self.Widgets["Driver Frame"] = Frame(master=self.Widgets["Selection Notebook"])
@@ -198,15 +193,7 @@ class PreferenceWindow(Toplevel):
 
         self.Widgets["General Frame"].pack(fill=BOTH, expand=1)
         self.Widgets["Plugin Frame"].pack(fill=BOTH, expand=1)
-
-        self.Widgets["Plugin Frame"].grid_columnconfigure(index=0,weight=1)
-        plugin_list = self.parent.PluginManager.get_plugin_list()
-        for i in range(0, len(plugin_list)):
-            discription = self.parent.PluginManager.get_plugin_by_name( plugin_list[i] ).TitlePlugin.description
-            plugin = PreferenceWindow.PluginFrame(master=self.Widgets["Plugin Frame"].get_attach_point(), text=plugin_list[i], 
-                discription=discription, command=self._on_reload)
-            plugin["relief"] = "sunken"
-            plugin.grid(row=i, column=0, sticky=E+W, padx=2)
+        self.update_plugin_list()
 
         self.Widgets["Driver Frame"].pack(fill=BOTH, expand=1)
 
@@ -229,12 +216,9 @@ class PreferenceWindow(Toplevel):
         browsers = os.listdir(driver_location)
         
         for b in browsers:
-            print(b)
             if b.lower() == "chrome":
-                print("Chrome Drivers found")
                 drivers["Chrome"] = self.find_drivers(b, driver_location, "chromedriver")
             elif b.lower() == "firefox":
-                print("Firefox Drivers looking")
                 drivers["Firefox"] = self.find_drivers(b, driver_location, "geckodriver")                
 
         for d in drivers.keys():
@@ -247,6 +231,17 @@ class PreferenceWindow(Toplevel):
             if d == self.parent.appConfig["Browser"]:
                 driver.set_active(False)
             self.Drivers.append(driver)
+
+    def update_plugin_list(self):
+        plugin_list = self.parent.PluginManager.get_plugin_list()
+        self.Widgets["Plugin Frame"].grid_columnconfigure(index=0,weight=1)
+        for i in range(0, len(plugin_list)):
+            discription = self.parent.PluginManager.get_plugin_by_name( plugin_list[i] ).TitlePlugin.description
+            plugin = PreferenceWindow.PluginFrame(master=self.Widgets["Plugin Frame"].get_attach_point(), text=plugin_list[i], 
+                discription=discription, command=self._on_reload)
+            plugin["relief"] = "sunken"
+            plugin.pack(fill=X, expand=0)
+            #plugin.grid(row=i, column=0, sticky=E+W, padx=2)
 
     def find_drivers(self, browser, path, drivername):
         version_list = []
@@ -424,7 +419,6 @@ class PreferenceWindow(Toplevel):
         def pack(self,**kwargs):
             self._build()
             Frame.pack(self,**kwargs)
-
 
 class about_dialog(Toplevel):
     Verdana_Normal_10 = ("verdana", 10, "normal")

@@ -47,7 +47,8 @@ class control():
             }
             self._current_task = {
                 "Title" : None,
-                "Chapter" : None
+                "Chapter" : None,
+                "Update Title" : None
             }
             self.page_location = {
                 "current" : 0,
@@ -63,6 +64,7 @@ class control():
             self._sort = False
             self.ChapterQueue = deque()
             self.TitleQueue = deque()
+            self.UpdateTitleQueue = deque()
             self.PluginManager = Manager(TitleSource)
             self.PluginManager.discover_sources()
 

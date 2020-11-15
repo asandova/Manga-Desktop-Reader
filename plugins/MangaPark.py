@@ -15,6 +15,7 @@ from src.TitleSource import TitleSource
 from src.Stream import Stream
 
 from bs4 import BeautifulSoup
+from datetime import datetime
 import requests, re, json, os, logging, shutil
 from zipfile import ZipFile
 
@@ -58,6 +59,10 @@ class TitlePlugin(TitleSource):
         self.site_domain = dictionary["Site Domain"]
         self.manga_extention = dictionary["Manga Extention"]
         self.Title = dictionary["Title"]
+        if dictionary.get("Download Time") == None:
+            self.download_time = ""
+        else:
+            self.download_time = dictionary["Download Time"]
         self.directory = re.sub(TitlePlugin.replace_illegal_character_pattern, "-", self.Title)
         self.directory = re.sub(TitlePlugin.replace_space, "_", self.directory)
         self.summary = dictionary["Summary"] 
@@ -76,6 +81,7 @@ class TitlePlugin(TitleSource):
         dic["Site URL"] = self.site_url
         dic["Site Domain"] = self.site_domain
         dic["Manga Extention"] = self.manga_extention
+        dic["Download Time"] = self.download_time
         dic["Title"] = self.Title
         dic["Summary"] = self.summary
         dic["Author(s)"] = self.authors
@@ -128,7 +134,7 @@ class TitlePlugin(TitleSource):
         if os.path.exists(self.save_location+'/'+self.directory) == False:
             os.mkdir(self.save_location+'/'+self.directory)
         cover_image_link = cover_data.img["src"]
-        cover = requests.get("https:"+ cover_image_link)
+        cover = requests.get( cover_image_link)
         ext_loc = 0
         for i in range(0,len(cover_image_link)):
             if cover_image_link[i] == '.':
@@ -156,6 +162,9 @@ class TitlePlugin(TitleSource):
         Author_data = table.find('th', text="Author(s)").parent
         Artist_data = table.find('th', text="Artist(s)").parent
         Genre_data = table.find('th', text="Genre(s)").parent
+        self.authors = []
+        self.artists = []
+        self.genres = []
         for a in Author_data.find_all('a', target='_blank'):
             self.authors.append( a.text )
         for a in Artist_data.find_all('a', target="_blank"):
@@ -178,12 +187,12 @@ class TitlePlugin(TitleSource):
             manga_stream = Stream(version_name, stream_id)
             chapters = s.find_all('a', class_="ml-1 visited ch")
             for c in chapters:
-                
+
                 link = c.parent.parent
-                link = link.find('a', text="all")["href"]
+                link = link.find("a", text="all")["href"]
+
                 number_str = c.text
                 number_str_elements = re.compile("[vV]ol(ume)*[.]*[ ]*[0-9]+[ ]").split(number_str)
-                #print(number_str_elements)
                 number = self.extract_chapter_number( number_str )
 
                 number_str_elements = number_str_elements[-1].split(': ')
@@ -191,8 +200,6 @@ class TitlePlugin(TitleSource):
                 if len( number_str_elements) > 1:
                     name = number_str_elements[-1]
                 else:
-                    #if stream_id == 4:
-                        #print(c.parent.parent.prettify())
                     Title_tag = c.parent.parent.find('div', class_="d-none d-md-flex align-items-center ml-0 ml-md-1 txt")
                     if Title_tag != None:
                         #print(Title_tag.text)
@@ -216,10 +223,9 @@ class TitlePlugin(TitleSource):
                         name = name[0:end]
 
                 chap = ChapterPlugin(name, number)
-                chap.set_link( self.site_domain + link)
-                #print(f"adding chapter {chap.get_full_title()}")
+                print("https://" + self.site_domain + link)
+                chap.set_link( "https://" + self.site_domain + link)
                 manga_stream.add_chapter(chap)
-            #print("adding stream " + manga_stream.name)
             self.add_stream(manga_stream)
         logger.info("extraction of streams: Complete")
 
@@ -242,6 +248,8 @@ class ChapterPlugin(Chapter):
         super().__init__(name, number)
 
     def download_chapter(self, save_location, killDownload=[False]):
+        webp_pattern = re.compile("webp.*")
+
         if killDownload[0] == True:
             logger.info("Download kill signal received.")
             return 4
@@ -269,7 +277,6 @@ class ChapterPlugin(Chapter):
             else:
                 page_name = 'page_'
                 logger.info( "Begining Download of Chapter " + str( self.chapter_number) )
-                #print("Begining Download of Chapter " + str( self.chapter_number) )
                 save_path = save_location+'/'+self.get_full_title() + "/"
                 for p in pages:
                     if killDownload[0] == True:
@@ -299,13 +306,11 @@ class ChapterPlugin(Chapter):
                         with open(save_path+filename, 'wb') as f:
                             f.write(img.content)
                             f.close()
-                        if url_elements[-1] == "webp":
+                        if re.match(webp_pattern, url_elements[-1]):
+                        #if url_elements[-1] == "webp":
                             jpeg_name = page_name + num +'.jpeg'
                             ChapterPlugin._convert_webp_to_jpeg( infile=save_path+filename, outfile=save_path+jpeg_name )
                             os.remove(save_path+filename)
-                            #self.pages[int(num)] = jpeg_name
-                        #else:
-                            #self.pages[int(num)] = filename
                 save_path = save_location+'/'
                 zip_name = self.get_full_title() +".zip"
                 zip_file = ZipFile( save_path+zip_name ,'w')
