@@ -71,6 +71,9 @@
                           <property name="weight">0</property>
                         </column>
                         <column id="1">
+                          <property name="weight">0</property>
+                        </column>
+                        <column id="2">
                           <property name="weight">1</property>
                         </column>
                       </columns>
@@ -90,10 +93,10 @@
                     <child>
                       <object class="ttk.Entry" id="SearchEntry">
                         <layout>
-                          <property name="column">1</property>
+                          <property name="column">2</property>
                           <property name="propagate">True</property>
                           <property name="row">0</property>
-                          <property name="sticky">nsew</property>
+                          <property name="sticky">ew</property>
                         </layout>
                       </object>
                     </child>
@@ -108,12 +111,9 @@
             <property name="weight">4</property>
             <child>
               <object class="ttk.Labelframe" id="InfoFrameLabel">
-                <property name="height">200</property>
                 <property name="labelanchor">n</property>
                 <property name="padding">2</property>
                 <property name="relief">sunken</property>
-                <property name="text" translatable="yes">Manga Park</property>
-                <property name="width">200</property>
                 <layout>
                   <property name="column">0</property>
                   <property name="propagate">True</property>
@@ -152,8 +152,6 @@
                     </layout>
                     <child>
                       <object class="ttk.Frame" id="InfoFrame">
-                        <property name="height">200</property>
-                        <property name="width">200</property>
                         <layout>
                           <property name="column">0</property>
                           <property name="propagate">True</property>
@@ -191,7 +189,7 @@
                             <property name="text" translatable="yes">Title</property>
                             <layout>
                               <property name="column">1</property>
-                              <property name="columnspan">10</property>
+                              <property name="columnspan">11</property>
                               <property name="pady">2</property>
                               <property name="propagate">True</property>
                               <property name="row">0</property>
@@ -207,7 +205,7 @@
                             <property name="text" translatable="yes">Author(s)</property>
                             <layout>
                               <property name="column">1</property>
-                              <property name="columnspan">10</property>
+                              <property name="columnspan">11</property>
                               <property name="pady">1</property>
                               <property name="propagate">True</property>
                               <property name="row">2</property>
@@ -222,7 +220,7 @@
                             <property name="text" translatable="yes">Artist(s)</property>
                             <layout>
                               <property name="column">1</property>
-                              <property name="columnspan">10</property>
+                              <property name="columnspan">11</property>
                               <property name="pady">1</property>
                               <property name="propagate">True</property>
                               <property name="row">3</property>
@@ -238,7 +236,7 @@
                             <property name="text" translatable="yes">Genre(s)</property>
                             <layout>
                               <property name="column">1</property>
-                              <property name="columnspan">10</property>
+                              <property name="columnspan">11</property>
                               <property name="pady">1</property>
                               <property name="propagate">True</property>
                               <property name="row">4</property>
@@ -255,7 +253,7 @@
                             <property name="width">20</property>
                             <layout>
                               <property name="column">1</property>
-                              <property name="columnspan">10</property>
+                              <property name="columnspan">11</property>
                               <property name="propagate">True</property>
                               <property name="row">5</property>
                               <property name="sticky">nsew</property>
@@ -380,10 +378,23 @@
                           </object>
                         </child>
                         <child>
+                          <object class="ttk.Label" id="UpdateTimeLabel">
+                            <property name="compound">top</property>
+                            <property name="text" translatable="yes">Last Update:
+00:00AM JAN 1, 0000</property>
+                            <property name="width">17</property>
+                            <layout>
+                              <property name="column">8</property>
+                              <property name="propagate">True</property>
+                              <property name="row">6</property>
+                            </layout>
+                          </object>
+                        </child>
+                        <child>
                           <object class="ttk.Button" id="RemoveButton">
                             <property name="text" translatable="yes">Remove Title</property>
                             <layout>
-                              <property name="column">8</property>
+                              <property name="column">9</property>
                               <property name="propagate">True</property>
                               <property name="row">6</property>
                             </layout>
@@ -394,7 +405,7 @@
                             <property name="text" translatable="yes">Update</property>
                             <property name="width">6</property>
                             <layout>
-                              <property name="column">9</property>
+                              <property name="column">10</property>
                               <property name="propagate">True</property>
                               <property name="row">6</property>
                             </layout>
@@ -405,7 +416,7 @@
                             <property name="text" translatable="yes">Sort</property>
                             <property name="width">4</property>
                             <layout>
-                              <property name="column">10</property>
+                              <property name="column">11</property>
                               <property name="propagate">True</property>
                               <property name="row">6</property>
                             </layout>
@@ -445,7 +456,8 @@
               <property name="column">0</property>
               <property name="propagate">True</property>
               <property name="row">0</property>
-              <property name="sticky">sew</property>
+              <property name="rowspan">2</property>
+              <property name="sticky">ew</property>
             </layout>
           </object>
         </child>
@@ -454,9 +466,42 @@
             <layout>
               <property name="column">1</property>
               <property name="propagate">True</property>
-              <property name="row">0</property>
+              <property name="row">1</property>
               <property name="sticky">se</property>
             </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Frame" id="Frame_9">
+            <property name="height">200</property>
+            <property name="width">200</property>
+            <layout>
+              <property name="column">1</property>
+              <property name="propagate">True</property>
+              <property name="row">0</property>
+              <property name="sticky">e</property>
+            </layout>
+            <child>
+              <object class="ttk.Button" id="CancelDL_Button">
+                <property name="compound">top</property>
+                <property name="text" translatable="yes">Cancel Downloads</property>
+                <layout>
+                  <property name="column">0</property>
+                  <property name="propagate">True</property>
+                  <property name="row">0</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Button" id="ViewDL_Button">
+                <property name="text" translatable="yes">View Downloads</property>
+                <layout>
+                  <property name="column">1</property>
+                  <property name="propagate">True</property>
+                  <property name="row">0</property>
+                </layout>
+              </object>
+            </child>
           </object>
         </child>
       </object>
