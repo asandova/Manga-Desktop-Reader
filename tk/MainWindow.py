@@ -365,7 +365,7 @@ class MainWindow(Tk, control):
     def _on_add_responce(self , data):
         pattern = re.compile(r"\s")
         data = re.subn(pattern,"", data)[0]
-        urls = data.split(",")
+        urls = data.split("[,\s]")
         for u in urls:
             domain = TitleSource.find_site_domain(u)
             if self.PluginManager.is_source_supported(domain):
@@ -415,22 +415,25 @@ class MainWindow(Tk, control):
         self.Widgets["Preference Window"] = PreferenceWindow(master=self)
 
     def _on_remove(self):
-        self.Widgets["InfoFrame"].grid_forget()
-        self.Info["Source Name"].set("")
-        title_to_delete = self.Title_Dict[self.selection["Title"].get_title()]
+        result = messagebox.askyesno("Are you sure?", "Do you want to remove\n\"" + self.selection["Title"].get_title() + "\"?")
 
-        location = title_to_delete.save_location +'/' + title_to_delete.directory
-        print(title_to_delete.save_location)
-        if os.path.isdir(location) == True:
-            if location != self.appConfig["Default Download Location"] or location != title_to_delete.save_location:
-                shutil.rmtree(location)
-                del self.Title_Dict[ self.selection["Title"].get_title() ]
-                self.Widgets["Title List"].delete( self.selection["Title"].get_title() )
-                self.selection["Title"] = None
-                self.selection["stream"] = None
-                self.selection["chapter"] = None
-            else:
-                logging.warning("Tried to delete library location")
+        if result == True:
+            self.Widgets["InfoFrame"].grid_forget()
+            self.Info["Source Name"].set("")
+            title_to_delete = self.Title_Dict[self.selection["Title"].get_title()]
+
+            location = title_to_delete.save_location +'/' + title_to_delete.directory
+            print(title_to_delete.save_location)
+            if os.path.isdir(location) == True:
+                if location != self.appConfig["Default Download Location"] or location != title_to_delete.save_location:
+                    shutil.rmtree(location)
+                    del self.Title_Dict[ self.selection["Title"].get_title() ]
+                    self.Widgets["Title List"].delete( self.selection["Title"].get_title() )
+                    self.selection["Title"] = None
+                    self.selection["stream"] = None
+                    self.selection["chapter"] = None
+                else:
+                    logging.warning("Tried to delete library location")
 
     def _on_remove_chapter(self, chapter_row):
         chapter_row.update_state("download", "Download", active=True)

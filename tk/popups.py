@@ -138,19 +138,24 @@ class PreferenceWindow(Toplevel):
         self.Widgets["Theme Combo"]["values"] = themes       
         self.Widgets["Theme Combo"]["state"] = "readonly"
 
+        #Download Location controls
         self.Widgets["DL Frame"] = Frame(master=self.Widgets["General Frame"])
         self.Widgets["DL Frame"]["relief"] = "ridge"
         self.Widgets["DL Frame"].grid_columnconfigure(1,weight=1)
         self.Widgets["DL Label"] = Label( master=self.Widgets["DL Frame"], text="Download Location", font=PreferenceWindow.Verdana_Normal_12 )
         self.Widgets["DL Entry"] = Entry(master=self.Widgets["DL Frame"], font=PreferenceWindow.Verdana_Normal_12)
         self.Widgets["DL Button"] = Button(master=self.Widgets["DL Frame"], text="Browse", width=8, command=self._on_dl_browse)
+        self.Widgets["DL Confirm"] = Button(master=self.Widgets["DL Frame"], text="Set", width=5,command=self.set_default_download_location)
+
 
         self.Widgets["DL Frame"].pack(side=TOP,fill=X, expand=0)
         self.Widgets["DL Label"].grid(row=0, column=0,padx=5)
         self.Widgets["DL Entry"].grid(row=0, column=1, sticky=E+W)
         self.Widgets["DL Entry"].insert(END, self.Info["Download Loc"].get())
         self.Widgets["DL Button"].grid(row=0, column=2, sticky=E)
+        self.Widgets["DL Confirm"].grid(row=0,column=3, sticky=E)
 
+        #Search Location controls
         self.Widgets["SL Frame"] = Frame(master=self.Widgets["General Frame"])
         self.Widgets["SL Frame"]["relief"] = "ridge"
         self.Widgets["SL Frame"].grid_columnconfigure(1,weight=1)
@@ -243,6 +248,12 @@ class PreferenceWindow(Toplevel):
             plugin.pack(fill=X, expand=0)
             #plugin.grid(row=i, column=0, sticky=E+W, padx=2)
 
+    def set_default_download_location(self, data=None):
+        location = self.Widgets["DL Entry"].get()
+        print("Setting Default Download location to:" + location)
+        self.parent.PluginManager.set_default_save_location_for_plugins(location)
+        self.parent.appConfig["Default Download Location"] = location
+
     def find_drivers(self, browser, path, drivername):
         version_list = []
         browser_path = os.path.join(path, browser)
@@ -295,7 +306,7 @@ class PreferenceWindow(Toplevel):
         if type( directory ) == str:
             self.Widgets["DL Entry"].delete(0, END)
             self.Widgets["DL Entry"].insert(0, directory)
-            self.parent.appConfig["Default Download Location"] = directory
+            #self.parent.appConfig["Default Download Location"] = directory
 
     def _on_reload(self, name):
         if self.parent.PluginManager.reload_plugin(name) != 0:

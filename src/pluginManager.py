@@ -58,6 +58,11 @@ class Manager:
     def get_plugin_list(self):
         return list(self.titleSources.keys())
 
+    def set_default_save_location_for_plugins(self, location):
+        plugin_names = self.get_plugin_list()
+        for p in plugin_names:
+            self.titleSources[p].TitlePlugin.set_default_save_location(location)
+
     def reload_plugin(self, module):
         try:
             if type( module ) == str:

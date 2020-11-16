@@ -157,8 +157,6 @@ class Viewer(Toplevel):
         return hash( (self.title, self.stream.get_id(), self.chapter.get_chapter_number() ) )
 
     def extract_zip(self):
-        #print("extracting..")
-        #print(self.save_location + '/'+self.chapter.get_full_title() + '.zip' )
         with ZipFile(self.save_location + '/'+self.chapter.get_full_title() + '.zip','r') as zip:
             zip.extractall(self.save_location+'/'+self.chapter.get_full_title() )
         pages = os.listdir(self.save_location+'/'+self.chapter.get_full_title() )
@@ -172,13 +170,10 @@ class Viewer(Toplevel):
     def remove_pages(self):
         """Removes page images after the viewer closes
         """
-        #print("removing pages")
-        #print( self.save_location+'/'+self.chapter.get_directory() )
         try:
             shutil.rmtree( self.save_location+'/'+self.chapter.get_directory() )
         except:
             print("failed to remove pages in location:\n\t" + self.save_location+'/'+self.chapter.get_directory())
-        #print("pages removed")
 
     def update_page(self, page_number):
         """Updates the pages canvas to page with given page number

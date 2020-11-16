@@ -241,7 +241,7 @@ if __name__ == "__main__":
     test = ScrollableFrame(master=main, anchor="nw")
     test.pack(side=LEFT,fill=BOTH, expand=1)
     test.grid_columnconfigure(0, weight=1)
-    for i in range(10):
+    for i in range(25):
         label = Label(master=test.get_attach_point(), text=str(i))
         label["bg"] = "red"
         label.grid(row=i, column=i, sticky=E+W)

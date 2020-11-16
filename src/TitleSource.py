@@ -265,6 +265,7 @@ class TitleSource(ABC):
 
     @staticmethod
     def set_default_save_location( location):
+        logger.debug("Setting default location to: " + location)
         TitleSource.default_save_location = location
 
     @staticmethod
