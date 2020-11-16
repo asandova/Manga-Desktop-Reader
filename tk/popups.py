@@ -253,6 +253,7 @@ class PreferenceWindow(Toplevel):
         print("Setting Default Download location to:" + location)
         self.parent.PluginManager.set_default_save_location_for_plugins(location)
         self.parent.appConfig["Default Download Location"] = location
+        self.Info["Status"].set("Default Download Location set: " + location)
 
     def find_drivers(self, browser, path, drivername):
         version_list = []
