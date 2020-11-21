@@ -39,7 +39,7 @@ log_file = "logs/MangaPark.log"
 os.makedirs(os.path.dirname( log_file ), exist_ok=True)
 
 file_handler = logging.FileHandler(log_file)
-file_handler.setLevel(logging.WARNING)
+file_handler.setLevel(logging.INFO)
 file_handler.setFormatter(formatter)
 
 logger.addHandler(file_handler)
@@ -176,6 +176,8 @@ class TitlePlugin(TitleSource):
                 self.genres.append(g.text)
 
     def _extract_streams(self):
+        Title_Class = "d-none d-md-flex align-items-center ml-0 ml-md-1 txt"
+
         stream_list = self.site_html.find('div', class_='book-list-1')
         streams = stream_list.find_all('div', class_='mt-3 stream')
         streams += stream_list.find_all('div', class_='mt-3 stream collapsed')
@@ -200,7 +202,7 @@ class TitlePlugin(TitleSource):
                 if len( number_str_elements) > 1:
                     name = number_str_elements[-1]
                 else:
-                    Title_tag = c.parent.parent.find('div', class_="d-none d-md-flex align-items-center ml-0 ml-md-1 txt")
+                    Title_tag = c.parent.parent.find('div', class_=Title_Class)
                     if Title_tag != None:
                         #print(Title_tag.text)
                         name = Title_tag.text
@@ -223,7 +225,7 @@ class TitlePlugin(TitleSource):
                         name = name[0:end]
 
                 chap = ChapterPlugin(name, number)
-                print("https://" + self.site_domain + link)
+                #print("https://" + self.site_domain + link)
                 chap.set_link( "https://" + self.site_domain + link)
                 manga_stream.add_chapter(chap)
             self.add_stream(manga_stream)
@@ -248,8 +250,6 @@ class ChapterPlugin(Chapter):
         super().__init__(name, number)
 
     def download_chapter(self, save_location, killDownload=[False]):
-        webp_pattern = re.compile("webp.*")
-
         if killDownload[0] == True:
             logger.info("Download kill signal received.")
             return 4
@@ -293,7 +293,9 @@ class ChapterPlugin(Chapter):
                         num = p.img["i"]
                         img = requests.get(url)
                         url_elements = url.split('.')
-                        filename =page_name + num +'.'+ url_elements[-1]
+                        extention = url_elements[-1]
+                        extention = extention.split("?")
+                        filename = page_name + num +'.'+ extention[0]
                         if(img.ok == False):
                             logger.info("Image URL responded with error:" + str(img.status_code) + " --- Terminating Borwser.")
                             browser.quit()
@@ -303,11 +305,14 @@ class ChapterPlugin(Chapter):
                             return 3
                         if os.path.isdir(save_path) == False:
                             os.makedirs(save_path)
+                        
                         with open(save_path+filename, 'wb') as f:
                             f.write(img.content)
                             f.close()
-                        if re.match(webp_pattern, url_elements[-1]):
-                        #if url_elements[-1] == "webp":
+
+                        #if re.match(webp_pattern, url_elements[-1]):
+                        if extention[0] == "webp":
+                            logger.info("Page "+ str(num) + " -- Converting webp to jpeg")
                             jpeg_name = page_name + num +'.jpeg'
                             ChapterPlugin._convert_webp_to_jpeg( infile=save_path+filename, outfile=save_path+jpeg_name )
                             os.remove(save_path+filename)

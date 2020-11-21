@@ -235,7 +235,7 @@ class TitleSource(ABC):
             int or float -- returns the chapter number. if no chapter number can be found then returns -1
         """
         volume_chapter_pattern = re.compile("[vV]ol(ume)*[.]*[ ]*[0-9]+[ ]+[cC]h(apter)*[.]*[ ]*[0-9]+")
-        chapter_pattern = re.compile("[cC]h(apter)*[.]*[ ]*[0-9]+")
+        chapter_pattern = re.compile("([cC]h(apter)*[.]*[ ]*[0-9]+)|([eE]p(isode)*[ ]*[0-9]+)")
         volume_pattern = re.compile("[vV]ol(ume)*[.]*[ ]*[0-9]+")
         if(re.match(volume_chapter_pattern, chapter_string) != None 
             or re.match(chapter_pattern, chapter_string) != None):

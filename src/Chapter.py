@@ -127,7 +127,8 @@ class Chapter:
     def _convert_webp_to_jpeg(infile,outfile):
         try:
             logger.info("Converting page to jpeg format")
-            Image.open(infile).save(outfile)
+            jpeg = Image.open(infile).convert("RGB")
+            jpeg.save(outfile)
         except IOError:
             logger.exception("Conversion Failed: ")
             #print("cannot convert", infile)

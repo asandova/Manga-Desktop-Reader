@@ -70,7 +70,8 @@ class TitlePlugin(TitleSource):
         self.directory = re.sub(TitlePlugin.replace_space, "_", self.directory)
 
     def _extract_summary(self):
-        container = self.site_html.find("div", class_="col-24 col-sm-16 col-md-18 mt-4 mt-sm-0 attr-main")
+        summary_class = "col-24 col-sm-16 col-md-18 mt-4 mt-sm-0 attr-main"
+        container = self.site_html.find("div", class_=summary_class)
         summary = self.site_html.find('pre')
         if summary != None:
             self.summary = summary.text
@@ -78,7 +79,8 @@ class TitlePlugin(TitleSource):
             self.summary = "N/A"
 
     def _extract_title_info(self):
-        container = self.site_html.find("div", class_="col-24 col-sm-16 col-md-18 mt-4 mt-sm-0 attr-main")
+        title_containter_class = "col-24 col-sm-16 col-md-18 mt-4 mt-sm-0 attr-main"
+        container = self.site_html.find("div", class_= title_containter_class)
         Author_data = container.find('b', text="Authors:").parent
         Genre_data = container.find('b', text="Genres:").parent.span
         Genre_data = Genre_data.find_all("span")
@@ -93,15 +95,20 @@ class TitlePlugin(TitleSource):
         self.genres = Genre_list
 
     def _extract_streams(self):
-        chapter_container = self.site_html.find("div", class_="main")
-        chapter_list = chapter_container.find_all("div", class_="p-2 d-flex flex-column flex-md-row item ")
+        Chapter_list_class = "p-2 d-flex flex-column flex-md-row item"
 
+        chapter_container = self.site_html.find("div", class_="main")
+        print(chapter_container.prettify())
+        chapter_list =  chapter_container.find_all("div", class_=Chapter_list_class)
+        chapter_list += chapter_container.find_all("div", class_=Chapter_list_class + " ")
+        chapter_list += chapter_container.find_all("div", class_=Chapter_list_class + " is-new")
+        chapter_list += chapter_container.find_all("div", class_=Chapter_list_class + "  is-new")
+        print(len( chapter_list ))
         title_stream = Stream("Manga Window", id=1)
         for c in chapter_list:
             link = c.a["href"]
             num_str = c.find("b").text
             number = self.extract_chapter_number(num_str)
-            number_str_elements = re.compile("[vV]ol(ume)*[.]*[ ]*[0-9]+[ ]*").split(num_str)
             title = c.a.text
             title_elements = title.split(":")
             title = title_elements[-1]
@@ -118,7 +125,7 @@ class TitlePlugin(TitleSource):
 
             chap =  ChapterPlugin(title[start:end], number)
             chap.set_link("https://" + self.site_domain+link)
-            #print(chap)
+            print(chap)
             title_stream.add_chapter(chap)
         self.add_stream(title_stream)
         
@@ -204,7 +211,6 @@ class ChapterPlugin(Chapter):
             else:
                 page_name = 'page_'
                 logger.info( "Begining Download of Chapter " + str( self.chapter_number) )
-                #print("Begining Download of Chapter " + str( self.chapter_number) )
                 save_path = save_location+'/'+self.get_full_title() + "/"
                 for p in pages:
                     if killDownload[0] == True:
@@ -216,15 +222,14 @@ class ChapterPlugin(Chapter):
                         return 4
                     else:
                         self.number_of_Pages += 1
-                        #print(p.prettify())
                         url = p.img['src']
                         num_str = p.span.text
                         num_str_elements = num_str.split("/")
                         num = num_str_elements[0]
-                        #num = p.img["i"]
                         img = requests.get(url)
                         url_elements = url.split('.')
-                        filename =page_name + num +'.'+ url_elements[-1]
+                        extention = url_elements[-1].split("?")
+                        filename = page_name + num +'.'+ extention[0]
                         if(img.ok == False):
                             logger.info("Image URL responded with error:" + str(img.status_code) + " --- Terminating Borwser.")
                             browser.quit()
