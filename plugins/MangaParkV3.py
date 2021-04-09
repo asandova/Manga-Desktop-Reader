@@ -36,19 +36,17 @@ chromeopts.set_headless()
 assert chromeopts.headless
 
 firefoxopts = FirefoxOptions()
-firefoxopts.set_headless()
-assert firefoxopts.headless
+#firefoxopts.set_headless()
+#assert firefoxopts.headless
 
-log_file = "logs/MangaPark.log"
-
+log_file = "logs/"+__name__+".log"
 rotating_handler = RotatingFileHandler(log_file, mode='a', maxBytes=5*1024*1024, backupCount=2, encoding=None, delay=0)
 
 logger = logging.getLogger(__name__)
 logger.propagate = False
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 formatter = logging.Formatter("%(asctime)s:%(name)s -- %(message)s")
-
 
 os.makedirs(os.path.dirname( log_file ), exist_ok=True)
 
@@ -61,14 +59,14 @@ logger.addHandler(rotating_handler)
 
 class TitlePlugin(TitleSource):
 
-    _supported_domains = ["mangapark.net","https://mangapark.net"]
+    _supported_domains = ["v3.mangapark.net"]
 
     description = "Allows for extraction of titles from MangaPark.net"
     plugin_id = "MangaPark"
     
     def __init__(self):
         TitleSource.__init__(self)
-        self.site_name = "Manga Park"
+        self.site_name = "Manga Park v3"
 
     def request_manga(self, url):
         """This method is responsable for getting the raw html from url
@@ -94,10 +92,10 @@ class TitlePlugin(TitleSource):
             self.download_time = datetime.now().strftime("%I:%M%p\n%b %d, %Y")
             self.site_url = url
             self.site_html = BeautifulSoup( browser.page_source, 'lxml' )
-                
+            return 0
         except Exception:
             logger.exception("Error Occured:  ")
-
+            return -1
 
     def from_dict(self, dictionary):
         self.site_url = dictionary["Site URL"]
@@ -203,8 +201,9 @@ class TitlePlugin(TitleSource):
             logger.exception("Failed to update")
             return -1
 
+
     def _extract_cover(self):
-        cover_data = self.site_html.find('div', class_="w-100 cover")
+        cover_data = self.site_html.find('div', class_="col-24 col-sm-8 col-md-6 attr-cover")
 
         if os.path.exists(self.save_location+'/'+self.directory) == False:
             os.mkdir(self.save_location+'/'+self.directory)
@@ -224,55 +223,74 @@ class TitlePlugin(TitleSource):
             f.close()
 
     def _extract_title(self):
-        self.Title = self.site_html.find('div', class_="pb-1 mb-2 line-b-f hd").h2.a.text
+        logger.info(self.site_html.prettify())
+        self.Title = self.site_html.find('div', class_="mt-4 d-flex justify-content-between title-set").h3.a.text
+        print("Title found: " + self.Title)    
         self.directory = re.sub(TitlePlugin.replace_illegal_character_pattern, "-", self.Title)
         self.directory = re.sub(TitlePlugin.replace_space, "_", self.directory)
 
     def _extract_summary(self):
-        #s = self.site_html.find('p', class_='summary').text
-        s = self.site_html.find("div", class_="limit-html summary").text
+        s = self.site_html.find("div", class_="limit-html").text
         self.summary = s
 
     def _extract_title_info(self):
-        table = self.site_html.find('table', class_="attr")
-        Author_data = table.find('th', text="Author(s)").parent
-        Artist_data = table.find('th', text="Artist(s)").parent
-        Genre_data = table.find('th', text="Genre(s)").parent
-        self.authors = []
-        self.artists = []
-        self.genres = []
-        for a in Author_data.find_all('a', target='_blank'):
-            self.authors.append( a.text )
-        for a in Artist_data.find_all('a', target="_blank"):
-            self.artists.append( a.text )
-        for g in Genre_data.find_all('a', target='_blank'):
-            if g.b != None:
-                self.genres.append(g.b.text)
-            else:
-                self.genres.append(g.text)
-
+        try:
+            table = self.site_html.find('div', class_="col-24 col-sm-16 col-md-18 mt-4 mt-sm-0 attr-main")
+            Author_data = table.find('b', text="Authors:").parent.span
+            Genre_data = table.find('b', text="Genres:").parent.span
+            self.authors = []
+            self.artists = []
+            self.genres = []
+            
+            for a in Author_data.find_all('span'):
+                print( a.text )
+                self.authors.append( a.text )
+            for a in Author_data.find_all('b'):
+                print( a.text )
+                self.authors.append( a.text )   
+            for a in Author_data.find_all('u'):
+                print( a.text )
+                self.authors.append( a.text ) 
+            
+            for g in Genre_data.find_all('span'):
+                print( g.text )
+                self.genres.append( g.text )
+            for g in Genre_data.find_all('b'):
+                print( g.text )
+                self.genres.append( g.text )   
+            for g in Genre_data.find_all('u'):
+                print( g.text )
+                self.genres.append( g.text ) 
+            
+            self.artists = self.authors
+        except Exception:
+            logger.exception("Extraction error Ocurred: ")
+            
     def _extract_streams(self):
-        Title_Class = "d-none d-md-flex align-items-center ml-0 ml-md-1 txt"
+        #Title_Class = "d-none d-md-flex align-items-center ml-0 ml-md-1 txt"
 
-        stream_list = self.site_html.find('div', class_='book-list-1')
-        streams = stream_list.find_all('div', class_='mt-3 stream')
-        streams += stream_list.find_all('div', class_='mt-3 stream collapsed')
-        for s in streams:
-            stream_id_str = s['id'].split('_')
-            stream_id = int(stream_id_str[-1])
-            version_tag = "ml-1 stream-text-" + str(stream_id)
-            version_name = s.find('span', class_=version_tag).text
-            manga_stream = Stream(version_name, stream_id)
-            chapters = s.find_all('a', class_="ml-1 visited ch")
+        Title_Class ="container-fluid container-max-width-xl"
+        
+        Stream_List_tag = "mt-3 episode-list scroll-list"
+        Stream_name_tag = "mt-4 episode-head"
+        
+        stream_list = self.site_html.find_all('div', class_=Stream_List_tag)
+        stream_names = self.site_html.find_all("div", class_=Stream_name_tag)
+        logger.info( stream_list )
+        for i in range(0, len(stream_names)-1):
+            version_name = stream_names[i].h6.text
+            manga_stream = Stream(version_name, i)
+            chapters = stream_list[i].find_all('div', class_="p-2 d-flex flex-wrap episode-item")
+            chapters += stream_list[i].find_all('div', class_="p-2 d-flex flex-wrap episode-item new")
+            #print(chapters)
             for c in chapters:
-
-                link = c.parent.parent
-                link = link.find("a", text="all")["href"]
-
-                number_str = c.text
+                link = c.a["href"]
+                #print("Link:" + link)
+                number_str = c.a.text
                 number_str_elements = re.compile("[vV]ol(ume)*[.]*[ ]*[0-9]+[ ]").split(number_str)
                 number = self.extract_chapter_number( number_str )
-
+                #print("Chapter# " + str(number))
+                
                 number_str_elements = number_str_elements[-1].split(': ')
                 name = ""
                 if len( number_str_elements) > 1:
@@ -296,9 +314,9 @@ class TitlePlugin(TitleSource):
                                 end = i+1
                                 break
                         name = name[0:end]
-
+                        
                 chap = ChapterPlugin(name, number)
-                chap.set_link( "https://" + self.site_domain + link)
+                chap.set_link( link )
                 manga_stream.add_chapter(chap)
             self.add_stream(manga_stream)
         logger.info("extraction of streams: Complete")
@@ -342,11 +360,12 @@ class ChapterPlugin(Chapter):
 
             logger.info("Navigating to " + self.chapter_link)
             browser.get(self.chapter_link)
-            wait.until(EC.visibility_of_element_located( (By.CLASS_NAME, "viewer") ))
+            
+            wait.until(EC.visibility_of_element_located( (By.ID, "viewer") ))
             site_source = BeautifulSoup(browser.page_source, 'lxml')
             logger.info("Finding Pages")
-            viewer = site_source.find('section', {"class" : "viewer",'id': 'viewer'})
-            pages = viewer.find_all('a',class_='img-link')
+            viewer = site_source.find('div', id="viewer")
+            pages = viewer.find_all('div',class_="item")
             logger.info("Pages found: " + str(len(pages)))    
             self.total_pages = len(pages)
             if len(pages) == 0:
@@ -367,9 +386,9 @@ class ChapterPlugin(Chapter):
                         return 4
                     else:
                         self.number_of_Pages += 1
-                        #print(p.prettify())
-                        url = p.img['src']
-                        num = p.img["i"]
+                        url = p.img['data-src']
+                        logger.info(url)
+                        num = p.span.text.split("/")[0]
                         img = requests.get(url)
                         url_elements = url.split('.')
                         extention = url_elements[-1]
