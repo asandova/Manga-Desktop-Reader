@@ -12,14 +12,16 @@
 #===============================================================================#
 
 try:
-    from tkinter import Tk, Widget, Button, Frame, Entry, Label, Listbox, Menubutton, Menu, Message, Scrollbar, PanedWindow, LabelFrame, StringVar,Canvas, Text, messagebox, Grid
+    #Importing Python 3 Tkinter
+    from tkinter import Tk, Widget, Button, Frame, Entry, Label, Listbox, Menubutton, Menu, Message, Scrollbar, PanedWindow, LabelFrame, StringVar,Canvas, Text, messagebox, Grid, filedialog
     from tkinter import LEFT, RIGHT, CENTER, TOP, BOTTOM, BOTH, X, Y, N, NE, E, SE, S, SW, W, NW, WORD, DISABLED, INSERT, END, NORMAL,SINGLE,VERTICAL,HORIZONTAL
     from tkinter import FLAT, RAISED, SUNKEN, GROOVE, RIDGE
     from tkinter import font, Event
-    from tkinter.ttk import Style, Button, Frame, Entry, Label, Menubutton, Scrollbar, PanedWindow, LabelFrame
-
+    from tkinter.ttk import Style, Button, Frame, Entry, Label, Menubutton, Scrollbar, PanedWindow, LabelFrame, Label
+    from ttkthemes import ThemedStyle
 except:
-    from Tkinter import Tk, Button, Frame, Entry, Label, Listbox, Menubutton, Menu, Message,Scrollbar,PanedWindow,LabelFrame,StringVar,Canvas, Text, messagebox, Grid
+    #Importing Python 2 Tkinter
+    from Tkinter import Tk, Button, Frame, Entry, Label, Listbox, Menubutton, Menu, Message,Scrollbar,PanedWindow,LabelFrame,StringVar,Canvas, Text, messagebox, Grid, filedialog
     from Tkinter import LEFT, RIGHT, CENTER, TOP, BOTTOM, BOTH, X, Y, N, NE, E, SE, S, SW, W, NW, WORD, DISABLED, INSERT, END, NORMAL,SINGLE,VERTICAL,HORIZONTAL
     from Tkinter import FLAT, RAISED, SUNKEN, GROOVE, RIDGE
     from Tkinter import font
@@ -36,10 +38,11 @@ from tk.ScrollableListBox import ScrollableListbox
 from tk.ScrollableFrame import ScrollableFrame
 from tk.Viewer import Viewer
 from tk.QueueWindow import QueueWindow
-from tk.popups import add_Window, about_dialog, PreferenceWindow
+from tk.popups import add_Window, about_dialog, PreferenceWindow, Queue_Window
 from tk.ChapterRow import ChapterRow
 
 logger = logging.getLogger(__name__)
+logger.propagate = False
 logger.setLevel(logging.DEBUG)
 
 formatter = logging.Formatter("%(asctime)s:%(name)s -- %(message)s")
@@ -71,9 +74,11 @@ class MainWindow(Tk, control):
         else:
             control.__init__(self)
             Tk.__init__(self ,*args, **kwargs)
-            self.style = Style()
+            #self.style = Style()
+            self.style = ThemedStyle(self)
             self.theme = theme
-            self.style.theme_use(theme)
+            #self.style.theme_use(theme)
+            self.style.set_theme(theme)
             self.Info = {
                 "Title"     : StringVar(),
                 "Authors"   : StringVar(),
@@ -102,6 +107,7 @@ class MainWindow(Tk, control):
             self._get_title_list_from_file()
             self._load_title_entry()
             MainWindow.Instance = self
+            Viewer.load_config(self.appConfig)
   
     def __create_from_template(self, template):
         self.builder = pygubu.Builder()
@@ -112,6 +118,8 @@ class MainWindow(Tk, control):
         self.Widgets["Add Command"] = self.builder.get_object("AddTitleCommand")
         self.Widgets["Pref Command"] = self.builder.get_object("Preferences")
         self.Widgets["Quit Command"]= self.builder.get_object("QuitCommand")
+        self.Widgets["Export Full"] = self.builder.get_object("ExportFull")
+        self.Widgets["Export Lite"] = self.builder.get_object("ExportLite")
         self.Widgets["Title Frame"] = self.builder.get_object("Titleframe")
         self.Widgets["Title List"] = None
         self.Widgets["Add Popup"] = None
@@ -190,8 +198,8 @@ class MainWindow(Tk, control):
         self.Widgets["Status Label"]["textvariable"] = self.Info["Status"]
 
         self.Widgets["Cancel DL Button"].config( command=self._on_cancel_downloads)
-        self.Widgets["View DL Button"]["state"] = DISABLED
-        #self.Widgets["View DL Button"].config(command=self._on_view_downloads)
+        #self.Widgets["View DL Button"]["state"] = DISABLED
+        self.Widgets["View DL Button"].config(command=self._on_view_downloads)
         self.Widgets["Search Button"].config(command=self._on_search_change)
         self.Widgets["Beginning Button"].config(command=self._on_beginning)
         self.Widgets["Prev Button"].config(command=self._on_prev)
@@ -330,11 +338,24 @@ class MainWindow(Tk, control):
         self.Widgets["Summary Text"]["state"] = DISABLED
         if self.selection["Stream"] != None:
             self._update_chapter_list(length=self.chapter_per_page, offset=self.page_location["current"])
- 
+               
+
     # Signal callback methods ---------------------------------------------------------------#
 
     def about(self):
         about_dialog(master=self)
+
+    def _import_library(self):
+        libraryfile = filedialog.askopenfile(title="Choose Library Archive", filetypes=( ("zip files", "*.zip"),( "all files","*.*" )))
+        
+        if type(libraryfile) == str:
+            self.update_status("Importing Library:\n"+libraryfile)
+            result = super()._import_library(libraryfile)
+            if result == 1:
+                errorpopup = messagebox.showerror("Import Error", libraryfile + "\nFailed to import library")
+                self.update_status("Library Import Failed")
+            else:
+                self.update_status("Library Imported")
 
     def _on_cancel_downloads(self):
         self._KillThreads[0] = True
@@ -365,7 +386,8 @@ class MainWindow(Tk, control):
     def _on_add_responce(self , data):
         pattern = re.compile(r"\s")
         data = re.subn(pattern,"", data)[0]
-        urls = data.split("[,\s]")
+        urls = data.split(",")
+        print(urls)
         for u in urls:
             domain = TitleSource.find_site_domain(u)
             if self.PluginManager.is_source_supported(domain):
@@ -422,8 +444,7 @@ class MainWindow(Tk, control):
             self.Info["Source Name"].set("")
             title_to_delete = self.Title_Dict[self.selection["Title"].get_title()]
 
-            location = title_to_delete.save_location +'/' + title_to_delete.directory
-            print(title_to_delete.save_location)
+            location = os.path.join( title_to_delete.save_location, title_to_delete.directory)
             if os.path.isdir(location) == True:
                 if location != self.appConfig["Default Download Location"] or location != title_to_delete.save_location:
                     shutil.rmtree(location)
@@ -474,10 +495,10 @@ class MainWindow(Tk, control):
         if v != None:
             messagebox.showinfo("Viewer open", "A viewer for this chapter is already open")
         else:
-            Viewer(self.selection["Title"], self.selection["Stream"], self.selection["Chapter"])
+            Viewer(self.selection["Title"], self.selection["Stream"], self.selection["Chapter"],master=self)
     
-    #def _on_view_downloads(self):
-    #    pass
+    def _on_view_downloads(self):
+        self.Widgets["Queue Window"] = Queue_Window(master=self)
 
     def _on_update(self):
 
@@ -615,8 +636,9 @@ class MainWindow(Tk, control):
                 self.ChapterQueue.clear()
                 return
             self._current_task["Chapter"] = self.ChapterQueue.pop()
+            #print(self._current_task["Chapter"])
             title = self._current_task["Chapter"][0]
-            print(title)
+            #print(title)
             stream = self._current_task["Chapter"][1]
             chapter = self._current_task["Chapter"][2]
             row = self.is_chapter_visable( title, stream, chapter )

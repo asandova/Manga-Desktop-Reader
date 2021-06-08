@@ -11,10 +11,10 @@
 #python_version  :3.6.9                                                         #
 #===============================================================================#
 try:
-    from tkinter import Toplevel, Label, Button, Frame, Grid, N, W, E, S, StringVar, Canvas, TOP
+    from tkinter import Toplevel, Label, Button, Frame, Grid, N, W, E, S, StringVar, Canvas, TOP, CENTER
     from tkinter.ttk import Label, Button, Frame
 except:
-    from Tkinter import Toplevel, Label, Button, Frame, Grid, N, W, E, S, StringVar, Canvas, TOP
+    from Tkinter import Toplevel, Label, Button, Frame, Grid, N, W, E, S, StringVar, Canvas, TOP, CENTER
     from Tkinter.ttk import Label, Button, Frame
 
 try:
@@ -27,11 +27,28 @@ from pygubu.builder import Builder
 from zipfile import ZipFile
 import shutil, re, os, platform
 import pygubu
+import logging
+
+logger = logging.getLogger(__name__)
+logger.propagate = False
+logger.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter("%(asctime)s:%(name)s -- %(message)s")
+
+log_file = "logs/tk.viewer.log"
+os.makedirs(os.path.dirname( log_file ), exist_ok=True)
+
+file_handler = logging.FileHandler(log_file)
+file_handler.setLevel(logging.WARNING)
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
 
 class Viewer(Toplevel):
     OpenViewers = {}
+    Config = {}
 
-    def __init__(self, title, stream, chapter,UI_Tamplate=None,master=None, **kw):
+    def __init__(self, title, stream, chapter,UI_Tamplate=None,master=None,config=None, **kw):
         if Viewer.get_instance(title, stream, chapter) != None:
             raise Exception("Viewer already open for this Chapter")
         else:
@@ -44,12 +61,25 @@ class Viewer(Toplevel):
             self.chapter = chapter
             self.title = title
             self.stream = stream
-            self.save_location =  title.save_location + "/" + title.get_directory() +'/'+ stream.get_directory()
+            self.save_location =  os.path.join(title.save_location, title.get_directory() )
+            self.save_location = os.path.join( self.save_location, stream.get_directory() )
             self.page_image = {}
             self.zoom_percentage = 10
             self.zoom_step = 1
             self.base_width = 1500
             self.base_height = 1200
+            self.window_width = 200
+            self.window_height = 500
+
+            if Viewer.Config != None:
+                if Viewer.Config.get("ViewerLast") != None:
+                    #print(Viewer.Config["ViewerLast"])
+                    self.window_width = Viewer.Config["ViewerLast"][0]
+                    self.window_height = Viewer.Config["ViewerLast"][1]
+
+                if Viewer.Config.get("ZoomPercentage") != None:
+                    self.zoom_percentage = Viewer.Config["ZoomPercentage"]
+
             self.width = self.base_width *  ( self.zoom_percentage / 10)
             self.height = self.base_height * ( self.zoom_percentage / 10)
             self.pageText = StringVar()
@@ -57,6 +87,14 @@ class Viewer(Toplevel):
             self.Chapter_Title = StringVar()
             self.Chapter_Subtitle = StringVar()
             self.pageZoom.set( str(int( self.zoom_percentage*10)) + "%" )
+   
+            self.geometry("%dx%d+%d+%d" % (
+                    self.window_width,
+                    self.window_height,
+                    master.winfo_rootx() + (master.winfo_width()/2 - self.window_width),
+                    master.winfo_rooty() + (master.winfo_height()/2 - self.window_height)
+                )
+            )   
             
             if UI_Tamplate != None:
                 self.__Load_from_template(UI_Tamplate)
@@ -73,6 +111,7 @@ class Viewer(Toplevel):
             self.bind("<Prior>", self.__on_previous)
             self.bind("=", self.__on_scale_increase)
             self.bind("-", self.__on_scale_decrease)
+            self.bind("<Configure>", self.__on_window_change)
             self.__PreviousButton["state"] = "disabled"
             Viewer.OpenViewers[hash(self)] = self
 
@@ -157,32 +196,36 @@ class Viewer(Toplevel):
         return hash( (self.title, self.stream.get_id(), self.chapter.get_chapter_number() ) )
 
     def extract_zip(self):
-        with ZipFile(self.save_location + '/'+self.chapter.get_full_title() + '.zip','r') as zip:
-            zip.extractall(self.save_location+'/'+self.chapter.get_full_title() )
-        pages = os.listdir(self.save_location+'/'+self.chapter.get_full_title() )
+        zip_path = os.path.join( self.save_location,self.chapter.get_full_title() )
+        
+        with ZipFile( zip_path + '.zip','r') as zip:
+            zip.extractall( zip_path )
+            zip.close()
+        pages = os.listdir( zip_path )
         self.number_of_pages = len(pages)
         for page in pages:
             elements = re.split('[_.]',page)
-            #print(elements)
             num = int(elements[1])
             self.page_image[ num ] = page
 
     def remove_pages(self):
         """Removes page images after the viewer closes
         """
+        path = os.path.join( self.save_location, self.chapter.get_directory() )
         try:
-            shutil.rmtree( self.save_location+'/'+self.chapter.get_directory() )
+            shutil.rmtree( path )
         except:
-            print("failed to remove pages in location:\n\t" + self.save_location+'/'+self.chapter.get_directory())
+            print("failed to remove pages in location:\n\t" + path)
 
-    def update_page(self, page_number):
+    def update_page(self, page_number, reset=False):
         """Updates the pages canvas to page with given page number
         
         Arguments:
             page_number {int} -- page number (positive and non-zero)
         """
         if self.page_image.get(page_number) != None:
-            path = self.save_location +'/'+ self.chapter.get_directory() +"/"+ self.page_image[page_number] 
+            path = os.path.join( self.save_location, self.chapter.get_directory() )
+            path = os.path.join( path, self.page_image[page_number] )
             #print(path)
             if os.path.isfile(path) == False or page_number == -1:
                 pass
@@ -193,11 +236,12 @@ class Viewer(Toplevel):
                 sheight = int( load.height * ( self.zoom_percentage / 10.0) )# /  load.height
                 load = load.resize((swidth,sheight), Image.ANTIALIAS)
                 render = ImageTk.PhotoImage(load)
-                
                 self.__PageCanvas["width"] = swidth
                 self.__PageCanvas["height"] = sheight
-                self.__PageCanvas.create_image(swidth/2,sheight/2,anchor="c", image=render)
+                self.__PageCanvas.create_image(swidth/2,sheight/2,anchor=CENTER, image=render)
                 self.__PageCanvas.image = render
+                logger.info( f"scaled dimentions - w: {swidth}, h: {sheight}\nwindow dimentions - w: {self.window_width}, h: {self.window_height}" )
+                
 
     # Static Methods ------------------------------------------------------------------------#
 
@@ -215,8 +259,23 @@ class Viewer(Toplevel):
         """
         obj_hash = hash( (title, stream.get_id(), chapter.get_chapter_number()))
         return Viewer.OpenViewers.get(obj_hash)
+    
+    @staticmethod
+    def load_config(config):
+        """Set the Viewer Config Dictionary
+        
+        Arguments:
+            config {Dictionary object} -- Is a Dictionary that viewer configuration
+        """        
+        if type( config ) == dict:
+            Viewer.Config = config
 
     # Signal callback methods ---------------------------------------------------------------#
+
+    def __on_window_change(self, event=None):
+        self.window_width = self.winfo_width()
+        self.window_height = self.winfo_height()
+
 
     def __on_next(self, event=None):
         """Signal catcher method for the next button
@@ -283,3 +342,9 @@ class Viewer(Toplevel):
         self.remove_pages()
         self.destroy()
         del Viewer.OpenViewers[ hash(self) ]
+        if len( Viewer.OpenViewers ) == 0:
+            print(f"width: {self.width}, height: {self.height}, Zoom: {self.zoom_percentage}")
+            Viewer.Config["ViewerLast"][0] = self.window_width
+            Viewer.Config["ViewerLast"][1] = self.window_height
+            Viewer.Config["ZoomPercentage"] = self.zoom_percentage
+            

@@ -14,6 +14,7 @@
 try:
     from Tkinter import Tk, Frame, Scrollbar, Listbox ,LEFT, RIGHT, TOP, BOTTOM, BOTH, N, E, S ,W, Grid, SINGLE, END
     from Tkinter.ttk import *
+    from ttkthemes import ThemedStyle
 except ImportError:
     from tkinter import Tk, Frame, Scrollbar, Listbox ,LEFT, RIGHT, TOP, BOTTOM, BOTH, N, E, S ,W, Grid, SINGLE, END
     from tkinter.ttk import *

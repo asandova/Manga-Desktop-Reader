@@ -11,11 +11,12 @@
 #python_version  :3.6.9                                                         #
 #===============================================================================#
 try:
-    from tkinter import Tk, Toplevel, Label, Button, Frame, LabelFrame, Entry, Listbox, Canvas, Grid, X,Y,E,W,N,S, BOTH,TOP, StringVar, Text, END, filedialog, DISABLED
-    from tkinter.ttk import Style, Label, Button, Frame, LabelFrame, Notebook, Combobox, Style
+    from tkinter import Tk, Toplevel, Label, Button, Frame, LabelFrame, Entry, Listbox, Canvas, Grid, X,Y,E,W,N,S, BOTH,TOP, StringVar, Text, END, filedialog, DISABLED, IntVar
+    from tkinter.ttk import Style, Label, Button, Frame, LabelFrame, Notebook, Combobox, Style, Progressbar, Radiobutton
+    from ttkthemes import ThemedStyle
 except:
-    from Tkinter import Tk, Toplevel, Label, Button, Frame, LabelFrame, Entry, Listbox, Canvas, Grid, X,Y,E,W,N,S, BOTH,TOP, StringVar, Text, END, filedialog, DISABLED
-    from Tkinter.ttk import Style, Label, Button, Frame, LabelFrame, Notebook, Combobox, Style
+    from Tkinter import Tk, Toplevel, Label, Button, Frame, LabelFrame, Entry, Listbox, Canvas, Grid, X,Y,E,W,N,S, BOTH,TOP, StringVar, Text, END, filedialog, DISABLED, IntVar
+    from Tkinter.ttk import Style, Label, Button, Frame, LabelFrame, Notebook, Combobox, Style, Progressbar, Radiobutton
 
 try:
     from ScrollableFrame import ScrollableFrame
@@ -135,6 +136,7 @@ class PreferenceWindow(Toplevel):
         themes = []
         for t in self.parent.style.theme_names():
             themes.append(t)
+        themes.sort()
         self.Widgets["Theme Combo"]["values"] = themes       
         self.Widgets["Theme Combo"]["state"] = "readonly"
 
@@ -341,8 +343,9 @@ class PreferenceWindow(Toplevel):
             self.selection["Search"]["Entry"] = ""
 
     def _on_theme_select(self, event=None):
-        print(self.Widgets["Theme Combo"].get())
-        self.parent.style.theme_use( self.Widgets["Theme Combo"].get() )
+        #print(self.Widgets["Theme Combo"].get())
+        #self.parent.style.theme_use( self.Widgets["Theme Combo"].get() )
+        self.parent.style.set_theme( self.Widgets["Theme Combo"].get() )
         self.parent.appConfig["tktheme"] = self.Widgets["Theme Combo"].get()
 
     class PluginFrame(LabelFrame):
@@ -453,12 +456,16 @@ class about_dialog(Toplevel):
             "Copyright" : StringVar(),
             "License" : StringVar()
         }
+        
+        f = open("LICENSE.md","r")
+        self.info["License"].set( f.read() )
+        f.close()
+        
         self.info["version"].set("Version 0.4b")
         self.info["Notice"].set("NOTICE:\nAll Manga/Comics viewed within this application\nbelong to their respective owner(s).")
         self.info["Name"].set("Manga Reader")
         self.info["Copyright"].set("Copyright (c) 2020 August B. Sandoval")
-        self.info["License"].set("MIT License\n\nCopyright (c) 2020 August B. Sandoval\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.")
-
+        
         self.Icon = Canvas(master=self.frame, width=50, height=50)
         self.versionLabel = Label(master=self.frame,textvariable=self.info["version"], font=about_dialog.Verdana_Normal_10)
         self.NoticeLabel = Label(master=self.frame, textvariable=self.info["Notice"], font=about_dialog.Verdana_Normal_10)
@@ -496,6 +503,119 @@ class about_dialog(Toplevel):
             self.licence.grid( row=5,column=0,columnspan=3,sticky=W+E+N+S)
         else:
             self.licence.grid_forget()
+
+class Queue_Window(Toplevel):
+    instance = None
+    def __init__(self, master, **kw):
+        if Queue_Window.instance != None:
+            raise Exception("Only one instance of Queue windows is allowed")
+        else:
+            Toplevel.__init__(self, master=master, **kw)
+            self.master = master
+            self.minsize(300,100)
+            self.geometry("345x320+%d+%d" % (
+                master.winfo_rootx() + (master.winfo_width()/2 - 125) ,
+                master.winfo_rooty() + (master.winfo_height()/2 - 80)
+                )
+            )
+            self.protocol("WM_DELETE_WINDOW",self._on_close)
+            self.title("Download Queue")
+            self.Widgets = {}
+            self.info = {
+                "current" : StringVar(),
+                "status" : StringVar(),
+                "selection" : StringVar()
+            }
+            self.queue_selection = IntVar()
+            self.info["current"].set("None")
+            self.info["status"].set("No Active Download")
+            self.resizable()
+            self._build()
+            Queue_Window.instance = self
+
+    def _build(self):
+        self.Widgets["Main Frame"] = Frame(master=self)
+
+        self.Widgets["Control Frame"] = Frame(master=self.Widgets["Main Frame"])
+        self.Widgets["Title Radio"] = Radiobutton(master=self.Widgets["Control Frame"],text="Titles",variable=self.queue_selection, value=0, command=self._change_queue)
+        self.Widgets["Chapter Radio"] = Radiobutton(master=self.Widgets["Control Frame"], text="Chapter",variable=self.queue_selection, value=1, command=self._change_queue)
+        self.Widgets["Update Radio"] = Radiobutton(master=self.Widgets["Control Frame"], text="Update",variable=self.queue_selection, value=2, command=self._change_queue)
+        
+
+        self.Widgets["Active Frame"] = LabelFrame(master=self.Widgets["Main Frame"], text="Active Download")
+        self.Widgets["Active Label"] = Label(master=self.Widgets["Active Frame"], textvariable=self.info["current"])
+        self.Widgets["Progress bar"] = Progressbar(master=self.Widgets["Active Frame"], mode="determinate")
+        self.Widgets["Status"] = Label(master=self.Widgets["Active Frame"], textvariable=self.info["status"])
+        
+        self.Widgets["Queue Frame"] = LabelFrame(master=self.Widgets["Main Frame"], text="Pending Downloads")
+        self.Widgets["Queue Frame"]["relief"] = "groove"
+        self.Widgets["Selection Frame"] = Frame(master=self.Widgets["Queue Frame"])
+        self.Widgets["Selection Entry"] = Entry(master=self.Widgets["Selection Frame"])
+        self.Widgets["Remove Button"] = Button(master=self.Widgets["Selection Frame"], text="Remove",command=self._on_remove)
+        self.Widgets["List Frame"] = Frame(master=self.Widgets["Queue Frame"])
+        self.Widgets["Queue"] = ScrollableListbox(master=self.Widgets["List Frame"],command=None)
+
+        self.grid_columnconfigure(index=0, weight=1)
+        self.grid_rowconfigure(index=0, weight=1)
+        self.Widgets["Main Frame"].grid_columnconfigure(index=0, weight=1)
+        self.Widgets["Main Frame"].grid_rowconfigure(index=2, weight=1)
+
+        self.Widgets["Active Frame"].grid_columnconfigure(index=0, weight=1)
+
+        self.Widgets["Main Frame"].grid(column=0, row=0, sticky=E+W+S+N, pady=5,padx=5)
+
+        self.Widgets["Control Frame"].grid(column=0, row=0, sticky=E+W+N)
+        self.Widgets["Title Radio"].grid(column=0, row=0)
+        self.Widgets["Chapter Radio"].grid(column=1, row=0)
+        self.Widgets["Update Radio"].grid(column=2, row=0)
+
+        self.Widgets["Active Frame"].grid(column=0,row=1, sticky=E+W+N)
+        self.Widgets["Active Label"].grid(row=0,column=0,sticky=E+W)
+        self.Widgets["Status"].grid(row=0,column=1,sticky=E)
+        self.Widgets["Progress bar"].grid(row=1,column=0, sticky=E+W,columnspan=2)
+
+        self.Widgets["Queue Frame"].grid(column=0, row=2, sticky=E+W+S+N, padx=5,pady=5)
+        self.Widgets["Queue Frame"].grid_columnconfigure(index=0, weight=1)
+        self.Widgets["Queue Frame"].grid_rowconfigure(index=1, weight=1)
+
+        self.Widgets["Selection Frame"].grid(column=0, row=0, sticky=N+E+W)
+        self.Widgets["Selection Frame"].grid_columnconfigure(index=0, weight=1)
+
+        self.Widgets["Selection Entry"].grid(column=0, row=0, sticky=N+E+W)
+        self.Widgets["Remove Button"].grid(column=1, row=0, sticky=E)
+
+        self.Widgets["List Frame"].grid(column=0, row=1, sticky=N+E+S+W)
+        self.Widgets["List Frame"].grid_rowconfigure( index=0, weight=1)
+        self.Widgets["List Frame"].grid_columnconfigure( index=0, weight=1)
+        
+        self.Widgets["Queue"].grid(column=0, row=0, sticky=N+E+S+W)
+
+    def _change_queue(self):
+        print("Queue ID selected " + str( self.queue_selection.get() ) )
+        self.Widgets["Queue"].remove_all()
+        entry_string = ""
+        if self.queue_selection.get() == 0:
+            for i in self.master.TitleQueue():
+                print(i)
+        
+        elif self.queue_selection.get() == 1:
+            for i in self.master.ChapterQueue:
+                entry_string = i[0].get_title() + " : " + str( i[2].get_chapter_number() ) 
+                self.Widgets["Queue"].insert(entry_string)              
+        elif self.queue_selection.get() == 2:
+            for i in self.master.UpdateTitleQueue:
+                print(i)
+    
+    def update(self):
+        pass
+
+    def _on_remove(self):
+        print("remove button pressed")
+        pass
+
+    def _on_close(self):
+        self.destroy()
+        Queue_Window.instance = None 
 
 if __name__ == "__main__":
     root = Tk()

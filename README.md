@@ -1,3 +1,7 @@
+## License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+
 # Manga Desktop Reader
 
 A simple manga reader for the desktop. Keeps track of all your favorite manga from your favorite manga sites all in place.
@@ -8,9 +12,13 @@ This is written in Python 3, but is python2.7 compatable and uses GTK3+(Linux on
 
 This application use existing manga reading site's library, thus must be supplied a url to fetch and display the title. However, once a url is given the title and chapters are downloaded a internet connection is not needed.
 
-* To add a title, click on the "file" button in the upper left hand corner, and click the option "add Manga (URL)".
+* To add a title, click on the "file" button in the upper left hand corner, and click the option "Add Title (URL)".
 
-**Note** - currently only titles from the site [Manga Park](https://mangapark.net) are supported for download from this application. Support for other sites are planned for later releases.
+### Supported Sites
+
+* [**MangaPark**](https://mangapark.net)
+* [**MangaWindow**](https://mangawindow.net)
+* [**Bato.to**](https://bato.to)
 
 ### Prerequisites
 
@@ -71,6 +79,7 @@ version 0.2 beta
 
 * **August B. Sandoval** - *Initial work* - [asandova](https://gitlab.com/asandova)
 
-## License
+### Support Development 
+* **Monero (MXR)** - `84ARwwrHUGZ7KgeXcoPoXVX35CmDwKdJaC7hiJaL95y7SmsRZBU1aA2YrgHE7QMHvgM2oj3J2j9R75B8DtFKWM4SQvrRe7s`
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+![Donation](images/Donation.png)

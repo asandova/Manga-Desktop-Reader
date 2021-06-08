@@ -35,7 +35,7 @@ log_file = "logs/" + __name__ + ".log"
 os.makedirs(os.path.dirname( log_file ), exist_ok=True)
 
 file_handler = logging.FileHandler(log_file)
-file_handler.setLevel(logging.WARNING)
+file_handler.setLevel(logging.INFO)
 file_handler.setFormatter(formatter)
 
 logger.addHandler(file_handler)
@@ -117,11 +117,20 @@ class ScrollableFrame(Frame):
         placement_y = None
         if "n" in self.__Anchor:
             placement_y = 0
+            placement_x = (self.__Canvas.width/2) + (self.__ScrollFrame["width"] / 2)
         if "w" in self.__Anchor:
             placement_x = 0
+            placement_y = (self.__Canvas.height/2) + (self.__ScrollFrame["height"] / 2)
         else:
-            placement_x = self.__Canvas.width/2 + self.__ScrollFrame["width"] / 2 
-            placement_y = self.__Canvas.height/2 + self.__ScrollFrame["height"] / 2
+            placement_x = (self.__Canvas.width/2) + (self.__ScrollFrame["width"] / 2) 
+            placement_y = (self.__Canvas.height/2) + (self.__ScrollFrame["height"] / 2)
+        FrameDimentions = ( self.__ScrollFrame["width"], self.__ScrollFrame["height"] )
+        CanvasDimentions = (self.__Canvas.winfo_width(), self.__Canvas.winfo_height() )
+        logger.info(f"Scroll Frame Dimentions: W,H: {FrameDimentions }")
+        logger.info(f"Canvas Dimentions: W,H: {CanvasDimentions}")
+        logger.info(f"Canvas Dimentions: W: {self.__Canvas.width}, H: {self.__Canvas.height}")
+        logger.info(f"Canvas Window Placement: X: {placement_x}, Y: {placement_y}, W: {self.__Canvas.width}, H: {self.__Canvas.height}")
+
 
         self.__Canvas.create_window(placement_x ,
                                     placement_y,
@@ -151,7 +160,7 @@ class ScrollableFrame(Frame):
         self.__Canvas.configure(
             scrollregion=self.__Canvas.bbox("all")
         )
-
+        logger.info( f"Canvas Dimentions updated - X: {self.__Canvas.winfo_rootx()}, Y: {self.__Canvas.winfo_rooty()}, width: {self.__Canvas.winfo_width()}, Height: {self.__Canvas.winfo_height()}" )
         verticalBounds = self.__VScroll.get()
         horizontalBounds = self.__HScroll.get()
         if verticalBounds == (0.0, 1.0):

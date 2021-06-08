@@ -15,6 +15,7 @@
 import json, os, sys, platform
 from queue import Queue
 from collections import deque
+from .modqueue import ModQueue
 try:
     #from src.MangaPark import MangaPark_Source
     from src.pluginManager import Manager
@@ -23,6 +24,12 @@ except:
     #from .MangaPark import MangaPark_Source
     from .pluginManager import Manager
     from .TitleSource import TitleSource
+
+from zipfile import ZipFile, ZIP_DEFLATED, LargeZipFile
+try:
+    from zipfile import BadZipFile
+except:
+    from zipfile import BadZipfile
 
 
 class control():
@@ -62,6 +69,8 @@ class control():
             self.Chapter_List = []
             self._KillThreads = [False]
             self._sort = False
+            #self.ChapterQueue = ModQueue()
+            #self.TitleQueue = ModQueue()
             self.ChapterQueue = deque()
             self.TitleQueue = deque()
             self.UpdateTitleQueue = deque()
@@ -137,6 +146,54 @@ class control():
             f.write(json.dumps(dic, separators=(",", " : "), indent=4))
             f.close()
 
+    def _export_library_lite(self, location="",infile="exportlite.json"):
+        try:
+            export_location = os.path.join(location, "LibraryLite.zip")
+            libzip = ZipFile(export_location, "w")
+
+            print("Begining library lite export")
+            for folder, subfolders, file in os.walk("./Manga"):
+                for subfolders in subfolders:
+                    path = folder + subfolders
+                for x in file:
+                    print(x)
+                    if x.endswith("json") or x == "cover.jpg":
+                        filepath = os.path.join(folder,x)
+                        print(filepath)
+                        libzip.write(filepath, compress_type=ZIP_DEFLATED)
+            libzip.close()
+            print("Export Complete")
+        except LargeZipFile:
+            print("Export is to large.\nStoping export")
+
+    def _export_library(self, location="."):
+        try:
+            export_location = os.path.join(location, "Library.zip")
+            libzip = ZipFile(export_location, "w")
+            
+            print("Beginning Library Export")
+            for folder, subfolders, file in os.walk("./Manga"):
+                for subfolders in subfolders:
+                    path = folder + subfolders
+                for x in file:
+                    filepath = os.path.join(folder, x)
+                    print(filepath)
+                    libzip.write(filepath,compress_type=ZIP_DEFLATED)
+            libzip.close()
+            print("Export Complete")
+        except LargeZipFile:
+            print("Export is to large.\nStoping export")
+
+    def _import_library(self, location):
+        try:
+            with ZipFile(location, "r") as lib:
+                lib.extractall(".")
+                lib.close()
+            return 0
+        except BadZipFile as e:
+            print("Bad archive: " + e)
+            return 1
+    
     @staticmethod
     def _load_config( config_file="config.json"):
         if os.path.exists( config_file) == True:

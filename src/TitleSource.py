@@ -15,20 +15,25 @@ try:
 except:
     from src.Stream import Stream
 from src.pluginManager import Manager
+from src.Chapter import Chapter
 from abc import ABC, abstractmethod
 import json, platform, requests, logging, re, os
+from logging.handlers import RotatingFileHandler
 from datetime import datetime
 from bs4 import BeautifulSoup
 
 platform_type = platform.system()
 
 logger = logging.getLogger(__name__)
+logger.propagate = False
 logger.setLevel(logging.DEBUG)
 
 formatter = logging.Formatter("%(asctime)s:%(name)s -- %(message)s")
 
-log_file = "logs/TitleSource.log"
+log_file = "logs/"+__name__+".log"
+rotating_handler = RotatingFileHandler(log_file, mode='a', maxBytes=5*1024*1024, backupCount=2, encoding=None, delay=0)
 os.makedirs(os.path.dirname( log_file ), exist_ok=True)
+formatter = logging.Formatter("%(asctime)s:%(name)s -- %(message)s")
 
 file_handler = logging.FileHandler(log_file)
 
@@ -49,6 +54,8 @@ class TitleSource(ABC):
     replace_illegal_character_pattern = re.compile( "[/<>:\"\\\?\*\|]" )
     replace_space = re.compile(" ")
 
+    discription = "Builtin Plugin"
+    plugin_id = "builtin"
 
     def __init__(self):
         """TitleSource Constructor.
@@ -64,7 +71,7 @@ class TitleSource(ABC):
         self.directory = re.sub(TitleSource.replace_space, "_", self.directory)
         #self.directory = self.Title.replace(' ', '_')
         if self.directory != "":
-            self.save_location += '/' + self.directory
+            self.save_location = os.path.join( self.save_location, self.directory)
         self.authors = []
         self.artists = []
         self.genres = []
@@ -112,11 +119,12 @@ class TitleSource(ABC):
         url_elements = url.split('/')
         self.site_domain = url_elements[2]
         self.manga_extention = "/" + url_elements[3] +'/'+url_elements[4]
+        print("Site Domain: " + self.site_domain)
 
     def update_streams(self):
         """This method is responsable for updating the title streams.
             This method is not to be overriden UNLESS the complete chapter list(s) are NOT
-            on a single HTML page or chapter lists are not generated without a bowser
+            on a single HTML page or chapter lists are not generated without a browser
         
         Returns:
             int -- returns 0 on success else return HTML error code
@@ -153,7 +161,9 @@ class TitleSource(ABC):
         for s in self.streams:
             for c in s.chapters:
                 stream_name = s.name.replace(' ', '_')
-                c.download_chapter( save_location +'/'+self.directory+'/'+ stream_name)
+                directory_path = os.path.join(save_location, self.directory)
+                stream_path = os.path.join(directory_path, stream_name)
+                c.download_chapter( stream_path)
 
     def download_title_stream(self, stream_id, location=""):
         save_location = self.save_location
@@ -163,7 +173,9 @@ class TitleSource(ABC):
             if s.id == stream_id:
                 for c in s.chapters:
                     stream_name = self.streams[stream_id].name.replace(' ', '_')
-                    c.download_chapter( save_location +'/'+self.directory+'/'+ stream_name)
+                    directory_path = os.path.join(save_location, self.directory)
+                    stream_path = os.path.join(directory_path, stream_name)
+                    c.download_chapter( stream_path)
                 return
 
     def download_title_chapter(self, stream_id, chapter_number, location="", KillDownload=[False]):
@@ -176,7 +188,9 @@ class TitleSource(ABC):
                     if  s.chapters[k].get_chapter_number() == chapter_number:
                         stream = self.get_stream_with_id(stream_id)
                         stream_name = stream.name.replace(' ', '_')
-                        code =  s.chapters[k].download_chapter(save_location +'/'+self.directory+'/'+ stream_name,KillDownload)
+                        directory_path = os.path.join(save_location, self.directory)
+                        stream_path = os.path.join(directory_path, stream_name)
+                        code =  s.chapters[k].download_chapter(stream_path, KillDownload)
                         return code
                 return -1
         return -2

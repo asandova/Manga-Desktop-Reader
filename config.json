@@ -1,16 +1,25 @@
 {
     "Hide Cache Files" : false,
     "Hide Download Directory" : false,
+    "Logging File" : "",
+    "chapters per page" : 50,
     "Cashe Save Location" : ".",
+    "tktheme" : "black",
     "Default Download Location" : "./Manga",
     "Webdriver Location" : "./WebDrivers",
-    "Browser Version" : "2.45",
-    "Browser" : "Chrome",
+    "Browser Version" : "0.26.0",
+    "Browser" : "Firefox",
+    "Load Extentions" : false,
+    "ViewerLast" : [
+        1319,
+        1374
+    ],
+    "ZoomPercentage" : 9,
     "UI" : {
         "Main" : "Main_Window",
         "Viewer" : "Viewer"
     },
-    "Search Location(s)" : [ 
+    "Search Location(s)" : [
         "./Manga"
     ]
 }

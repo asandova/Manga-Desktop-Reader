@@ -16,6 +16,7 @@ try:
     from tkinter import LEFT, RIGHT, DISABLED, NORMAL, E, W, X
     from tkinter import font
     from tkinter.ttk import Button, Frame, Label
+    from ttkthemes import ThemedStyle
 
 except:
     from tkinter import  Button, Frame, Label, StringVar, Grid

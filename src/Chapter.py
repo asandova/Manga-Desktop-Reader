@@ -15,6 +15,8 @@ from bs4 import BeautifulSoup
 import requests,traceback, sys, os, shutil, logging
 from PIL import Image
 from zipfile import ZipFile
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -34,6 +36,8 @@ class Chapter:
 
     Driver_path = None
     Driver_type = None
+    Driver_extentions = None
+    Driver_allow_extentions = False
 
     def __init__(self, name, number):
         self.chapter_name = name
@@ -123,6 +127,7 @@ class Chapter:
         logger.warning("Called parent version of download_chapter. Please override this in derived classes.")
         pass
 
+
     @staticmethod
     def _convert_webp_to_jpeg(infile,outfile):
         try:
@@ -132,6 +137,11 @@ class Chapter:
         except IOError:
             logger.exception("Conversion Failed: ")
             #print("cannot convert", infile)
+    @staticmethod
+    def _load_browser_extentions(BrowserOpts):
+        print("Searching for extentions")
+        e
+        return BrowserOpts
 
     def delete_chapter(self, save_location):
         chapter_path = save_location+"/"+self.get_full_title() + '.zip'
