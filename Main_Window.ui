@@ -530,7 +530,35 @@
           </object>
         </child>
         <child>
-          <object class="tk.Menuitem.Separator" id="Separator_1" />
+          <object class="tk.Menuitem.Command" id="ImportLibrary">
+            <property name="command">_import_library</property>
+            <property name="command_id_arg">false</property>
+            <property name="label" translatable="yes">Import Library</property>
+            <property name="state">normal</property>
+            <property name="underline">0</property>
+          </object>
+        </child>
+        <child>
+          <object class="tk.Menuitem.Submenu" id="ExportMenu">
+            <property name="label" translatable="yes">Export Library</property>
+            <property name="takefocus">false</property>
+            <property name="tearoff">false</property>
+            <child>
+              <object class="tk.Menuitem.Command" id="ExportFull">
+                <property name="command">_export_library</property>
+                <property name="command_id_arg">false</property>
+                <property name="compound">top</property>
+                <property name="label" translatable="yes">Full Export</property>
+              </object>
+            </child>
+            <child>
+              <object class="tk.Menuitem.Command" id="ExportLite">
+                <property name="command">_export_library_lite</property>
+                <property name="command_id_arg">false</property>
+                <property name="label" translatable="yes">Lite Export</property>
+              </object>
+            </child>
+          </object>
         </child>
         <child>
           <object class="tk.Menuitem.Command" id="QuitCommand">

@@ -26,7 +26,9 @@ def main():
     TitleSource.hide_cache_file = MainWindow.appConfig["Hide Cache Files"]
 
     Chapter.Driver_path = MainWindow.appConfig["Webdriver Location"] +'/'+MainWindow.appConfig["Browser"] +'/'+ MainWindow.appConfig["Browser Version"] + '/'
+    Chapter.Driver_extentions = MainWindow.appConfig["Webdriver Location"] +'/'+MainWindow.appConfig["Browser"] +'/Extentions/'
     Chapter.Driver_type = MainWindow.appConfig["Browser"]
+    Chapter.Driver_allow_extentions = MainWindow.appConfig["Load Extentions"]
     if Chapter.Driver_type == "Chrome":
         Chapter.Driver_path += "chromedriver"
     elif Chapter.Driver_type == "Firefox":
