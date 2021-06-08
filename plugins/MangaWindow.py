@@ -7,6 +7,7 @@ from src.Stream import Stream
 
 from bs4 import BeautifulSoup
 import requests, re, json, os, logging, shutil
+from logging.handlers import RotatingFileHandler
 from zipfile import ZipFile
 
 from selenium import webdriver
@@ -21,13 +22,15 @@ firefoxopts.set_headless()
 assert firefoxopts.headless
 
 logger = logging.getLogger(__name__)
+logger.propagate = False
 logger.setLevel(logging.DEBUG)
 
 formatter = logging.Formatter("%(asctime)s:%(name)s -- %(message)s")
 
-log_file = "logs/MangaWindow.log"
+log_file = "logs/"+__name__+".log"
+rotating_handler = RotatingFileHandler(log_file, mode='a', maxBytes=5*1024*1024, backupCount=2, encoding=None, delay=0)
 os.makedirs(os.path.dirname( log_file ), exist_ok=True)
-
+formatter = logging.Formatter("%(asctime)s:%(name)s -- %(message)s")
 file_handler = logging.FileHandler(log_file)
 file_handler.setLevel(logging.WARNING)
 file_handler.setFormatter(formatter)
@@ -39,6 +42,8 @@ class TitlePlugin(TitleSource):
     _supported_domains = ["mangawindow.net", "bato.to"]
 
     description = "Allows for extraction of titles from MangaWindow.net and bato.to"
+    plugin_id = "MangaWindow"
+
 
     def __init__(self):
         TitleSource.__init__(self)
@@ -98,12 +103,12 @@ class TitlePlugin(TitleSource):
         Chapter_list_class = "p-2 d-flex flex-column flex-md-row item"
 
         chapter_container = self.site_html.find("div", class_="main")
-        print(chapter_container.prettify())
+        #print(chapter_container.prettify())
         chapter_list =  chapter_container.find_all("div", class_=Chapter_list_class)
         chapter_list += chapter_container.find_all("div", class_=Chapter_list_class + " ")
         chapter_list += chapter_container.find_all("div", class_=Chapter_list_class + " is-new")
         chapter_list += chapter_container.find_all("div", class_=Chapter_list_class + "  is-new")
-        print(len( chapter_list ))
+        #print(len( chapter_list ))
         title_stream = Stream("Manga Window", id=1)
         for c in chapter_list:
             link = c.a["href"]
@@ -125,7 +130,7 @@ class TitlePlugin(TitleSource):
 
             chap =  ChapterPlugin(title[start:end], number)
             chap.set_link("https://" + self.site_domain+link)
-            print(chap)
+            #print(chap)
             title_stream.add_chapter(chap)
         self.add_stream(title_stream)
         
@@ -211,7 +216,7 @@ class ChapterPlugin(Chapter):
             else:
                 page_name = 'page_'
                 logger.info( "Begining Download of Chapter " + str( self.chapter_number) )
-                save_path = save_location+'/'+self.get_full_title() + "/"
+                save_path = os.path.join( save_location, self.get_full_title() ) 
                 for p in pages:
                     if killDownload[0] == True:
                         logger.info("Download Kill singal received. Clearing download")
@@ -239,27 +244,32 @@ class ChapterPlugin(Chapter):
                             return 3
                         if os.path.isdir(save_path) == False:
                             os.makedirs(save_path)
-                        with open(save_path+filename, 'wb') as f:
+                        image_save_path = os.path.join(save_path, filename)
+                        with open( image_save_path, 'wb') as f:
                             f.write(img.content)
                             f.close()
                         if url_elements[-1] == "webp":
                             jpeg_name = page_name + num +'.jpeg'
-                            Chapter.__convert_webp_to_jpeg( infile=save_path+filename, outfile=save_path+jpeg_name )
-                            os.remove(save_path+filename)
-                save_path = save_location+'/'
+                            out_path = os.path.join(save_path, jpeg_name)
+                            Chapter.__convert_webp_to_jpeg( infile=image_save_path, outfile=save_path+jpeg_name )
+                            os.remove(image_save_path)
+                #save_path = save_location+'/'
                 zip_name = self.get_full_title() +".zip"
-                zip_file = ZipFile( save_path+zip_name ,'w')
+
+                zip_file = ZipFile( os.path.join( save_path,zip_name) ,'w')
                 logger.info("Archiving Chapter...")
                 with zip_file:
-                    pages = os.listdir(save_path+self.directory+'/')
+                    pages = os.listdir( os.path.join( save_path,self.directory)  )
+                    page_path = os.path.join(save_path,self.directory)
                     for p in pages:
                         if p != zip_name:
-                            zip_file.write( save_path+self.directory+'/' + p, p ) 
-                            os.remove(save_path+self.directory+'/' +p)
+                            page_full_path = os.path.join( page_path, p )
+                            zip_file.write( page_full_path, p ) 
+                            os.remove(page_full_path)
                 zip_file.close()
                 logger.info("Archive Complete")
                 logger.info("Cleaning download space")
-                os.removedirs(save_path+self.directory)
+                os.removedirs( os.path.join( save_path, self.directory ) )
                 logger.info("Download of chapter_"+ str(self.chapter_number)+ ": complete --- Terminiating Browser")
                 browser.quit()
                 return 0

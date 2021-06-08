@@ -24,6 +24,7 @@ import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from selenium.webdriver.firefox import firefox_profile as FirefoxProfile
 
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
@@ -36,8 +37,8 @@ chromeopts.set_headless()
 assert chromeopts.headless
 
 firefoxopts = FirefoxOptions()
-firefoxopts.set_headless()
-assert firefoxopts.headless
+#firefoxopts.set_headless()
+#assert firefoxopts.headless
 
 log_file = "logs/MangaPark.log"
 
@@ -61,7 +62,7 @@ logger.addHandler(rotating_handler)
 
 class TitlePlugin(TitleSource):
 
-    _supported_domains = ["mangapark.net","https://mangapark.net"]
+    _supported_domains = ["mangapark.net","v2.mangapark.net", "https://mangapark.net"]
 
     description = "Allows for extraction of titles from MangaPark.net"
     plugin_id = "MangaPark"
@@ -77,7 +78,7 @@ class TitlePlugin(TitleSource):
             url {string} -- URL to the title page of the title being requested
         
         Returns:
-            int -- return 0 upon successful otherwise returns a HTML status code
+            int -- return 0 upon successful otherwise returns a negative
         """
         try:
             browser = None
@@ -87,17 +88,23 @@ class TitlePlugin(TitleSource):
                 browser = webdriver.Chrome(executable_path=Chapter.Driver_path,options=chromeopts)
                 logger.info("Starting headless Chrome Browser")
             elif Chapter.Driver_type == "Firefox":
+                print(Chapter.Driver_allow_extentions)
+                if Chapter.Driver_allow_extentions == True:
+                    print("Loading Browser Extentions")
+                    logger.info("Loading Browser Extentions...")
+                    super()._load_browser_extentions(firefoxopts)
                 browser = webdriver.Firefox(executable_path=Chapter.Driver_path,options=firefoxopts)
                 logger.info("Starting headless Firefox Browser")
             browser.get(url)
-            browser.quit()
             self.download_time = datetime.now().strftime("%I:%M%p\n%b %d, %Y")
             self.site_url = url
-            self.site_html = BeautifulSoup( browser.page_source, 'lxml' )
-                
+            self.site_html = BeautifulSoup( browser.page_source, 'lxml' ) 
+            logger.info("Closing Browser")
+            browser.quit()
+            return 0
         except Exception:
             logger.exception("Error Occured:  ")
-
+            return -2
 
     def from_dict(self, dictionary):
         self.site_url = dictionary["Site URL"]
@@ -189,13 +196,20 @@ class TitlePlugin(TitleSource):
                 browser = webdriver.Chrome(executable_path=Chapter.Driver_path,options=chromeopts)
                 logger.info("Starting headless Chrome Browser")
             elif Chapter.Driver_type == "Firefox":
-                browser = webdriver.Firefox(executable_path=Chapter.Driver_path,options=firefoxopts)
+                if Chapter.Driver_allow_extentions == True:
+                    logger.info("Loading Browser Extentions...")
+                    profile = webdriver.FirefoxProfile()
+                    extentions = os.listdir( Chapter.Driver_extentions )
+                    for e in extentions:
+                        print(os.path.join(Chapter.Driver_extentions, e))
+                        profile.add_extension(extension=os.path.join(Chapter.Driver_extentions, e))
+                        profile.update_preferences()
+                browser = webdriver.Firefox(executable_path=Chapter.Driver_path,options=firefoxopts,firefox_profile=profile)
                 logger.info("Starting headless Firefox Browser")
             browser.get(self.site_url)
-            browser.quit()
             self.download_time = datetime.now().strftime("%I:%M%p\n%b %d, %Y")
             self.site_html = BeautifulSoup( browser.page_source, 'lxml' )
-            logger.info( self.site_html.prettify() )
+            browser.quit()
             self.streams = []
             self.extract_title()
             return 0
@@ -260,8 +274,8 @@ class TitlePlugin(TitleSource):
         for s in streams:
             stream_id_str = s['id'].split('_')
             stream_id = int(stream_id_str[-1])
-            version_tag = "ml-1 stream-text-" + str(stream_id)
-            version_name = s.find('span', class_=version_tag).text
+            #version_tag = "ml-1addExtention stream-text-" + str(stream_id)
+            version_name = s.find('span', class_="ml-1 stream-text-" + str(stream_id)).text
             manga_stream = Stream(version_name, stream_id)
             chapters = s.find_all('a', class_="ml-1 visited ch")
             for c in chapters:
@@ -330,12 +344,21 @@ class ChapterPlugin(Chapter):
         time_start = None
         try:
             browser = None
+            global firefoxopts
+            global chromeopts
             if Chapter.Driver_path == None or Chapter.Driver_type == None:
                 return -1
             elif Chapter.Driver_type == "Chrome":
                 browser = webdriver.Chrome(executable_path=Chapter.Driver_path,options=chromeopts)
                 logger.info("Starting headless Chrome Browser")
             elif Chapter.Driver_type == "Firefox":
+                #if Chapter.Driver_allow_extentions == True:
+                #    logger.info("Loading Browser Extentions...")
+                    #profile = webdriver.FirefoxProfile()
+                    #extentions = os.listdir( Chapter.Driver_extentions )
+                    #for e in extentions:
+                    #    print(os.path.join(Chapter.Driver_extentions, e))
+                    #    profile.add_extension(extension=os.path.join(Chapter.Driver_extentions, e))
                 browser = webdriver.Firefox(executable_path=Chapter.Driver_path,options=firefoxopts)
                 logger.info("Starting headless Firefox Browser")
             wait = WebDriverWait(driver=browser, timeout=10 )

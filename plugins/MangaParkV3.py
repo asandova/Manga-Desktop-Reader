@@ -36,8 +36,8 @@ chromeopts.set_headless()
 assert chromeopts.headless
 
 firefoxopts = FirefoxOptions()
-#firefoxopts.set_headless()
-#assert firefoxopts.headless
+firefoxopts.set_headless()
+assert firefoxopts.headless
 
 log_file = "logs/"+__name__+".log"
 rotating_handler = RotatingFileHandler(log_file, mode='a', maxBytes=5*1024*1024, backupCount=2, encoding=None, delay=0)
@@ -88,10 +88,10 @@ class TitlePlugin(TitleSource):
                 browser = webdriver.Firefox(executable_path=Chapter.Driver_path,options=firefoxopts)
                 logger.info("Starting headless Firefox Browser")
             browser.get(url)
-            browser.quit()
             self.download_time = datetime.now().strftime("%I:%M%p\n%b %d, %Y")
             self.site_url = url
             self.site_html = BeautifulSoup( browser.page_source, 'lxml' )
+            browser.quit()
             return 0
         except Exception:
             logger.exception("Error Occured:  ")
@@ -190,17 +190,20 @@ class TitlePlugin(TitleSource):
                 browser = webdriver.Firefox(executable_path=Chapter.Driver_path,options=firefoxopts)
                 logger.info("Starting headless Firefox Browser")
             browser.get(self.site_url)
-            browser.quit()
             self.download_time = datetime.now().strftime("%I:%M%p\n%b %d, %Y")
             self.site_html = BeautifulSoup( browser.page_source, 'lxml' )
-            logger.info( self.site_html.prettify() )
+            browser.quit()
+            #logger.info( self.site_html.prettify() )
+            stream_containter = self.site_html.find("div", class_="container-fluid container-max-width-xl")
+            logger.info("---------------------------------------------\n\n\n\n" + stream_containter.prettify())
+            stream_heads = stream_containter.find_all( "div", class_="mt-4 py-2 d-flex justify-content-between cursor-pointer episode-head" )
+            logger.info( "Stream heads: " + str(  stream_heads ) )
             self.streams = []
             self.extract_title()
             return 0
         except Exception:
             logger.exception("Failed to update")
             return -1
-
 
     def _extract_cover(self):
         cover_data = self.site_html.find('div', class_="col-24 col-sm-8 col-md-6 attr-cover")
